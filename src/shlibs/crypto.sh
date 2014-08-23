@@ -38,15 +38,15 @@ hex_to_binary() {
 # $2 file where binary data will be stored
 #
 hex_to_binary_file() {
-	hex_to_binary "$1" >$2
+    hex_to_binary "$1" >$2
 }
 
 binary_file_to_hex() {
-	hexdump -ve '1/1 "%.2x"' "$1"
+    hexdump -ve '1/1 "%.2x"' "$1"
 }
 
 binary_to_hex() {
-	hexdump -ve '1/1 "%.2x"'
+    hexdump -ve '1/1 "%.2x"'
 }
 
 #
@@ -54,7 +54,7 @@ binary_to_hex() {
 #
 crypto_get_random_iv()
 {
-	echo "`openssl rand -hex $1`"
+    echo "`openssl rand -hex $1`"
 }
 
 #
@@ -92,31 +92,31 @@ crypto_hmac()
 crypto_aes_encrypt_file()
 {
     # Variables for parameters
-	local pInFile="$1"
-	local pOutFile="$2"
-	local pPassword="$3"
-	
-	if [ "$pInFile" = "$pOutFile" ]; then
-	    echo "ERROR: Input and output file cannot be the same"
-	    return 1
-	fi
-	
-	if [ -f "$pOutFile" ]; then
-	    echo "ERROR: Will NOT overwrite an existing encrypted file. Please delete '$pOutFile' first."
-	    return 1
-	fi
-	
-	# Temporary variables
-	local tKdfAesIv=`crypto_get_random_iv $gCryptoKdfIvSize`    # the IV used in the KDF for obtaining the AES key
-	local tKdfMacIv=`crypto_get_random_iv $gCryptoKdfIvSize`    # the IV used in the KDF for obtaining the HMAC key
-	local tAesIv=`crypto_get_random_iv $gCryptoAesIvSize`       # the AES IV
-	local tMac=0000000000000000000000000000000000000000000000000000000000000000    # the MAC over the ciphertext (we will replace this later)
-	local tAesKey=`crypto_kdf "aes-$pPassword" $tKdfAesIv`      # the AES encryption key
-	local tMacKey=`crypto_kdf "hmac-$pPassword" $tKdfMacIv`     # the HMAC integrity key
-	
-	echo "KDF IV for AES key: $tKdfAesIv"
-	echo "KDF IV for MAC key: $tKdfMacIv"
-	echo "AES IV: $tAesIv"
+    local pInFile="$1"
+    local pOutFile="$2"
+    local pPassword="$3"
+    
+    if [ "$pInFile" = "$pOutFile" ]; then
+        echo "ERROR: Input and output file cannot be the same"
+        return 1
+    fi
+    
+    if [ -f "$pOutFile" ]; then
+        echo "ERROR: Will NOT overwrite an existing encrypted file. Please delete '$pOutFile' first."
+        return 1
+    fi
+    
+    # Temporary variables
+    local tKdfAesIv=`crypto_get_random_iv $gCryptoKdfIvSize`    # the IV used in the KDF for obtaining the AES key
+    local tKdfMacIv=`crypto_get_random_iv $gCryptoKdfIvSize`    # the IV used in the KDF for obtaining the HMAC key
+    local tAesIv=`crypto_get_random_iv $gCryptoAesIvSize`       # the AES IV
+    local tMac=0000000000000000000000000000000000000000000000000000000000000000    # the MAC over the ciphertext (we will replace this later)
+    local tAesKey=`crypto_kdf "aes-$pPassword" $tKdfAesIv`      # the AES encryption key
+    local tMacKey=`crypto_kdf "hmac-$pPassword" $tKdfMacIv`     # the HMAC integrity key
+    
+    echo "KDF IV for AES key: $tKdfAesIv"
+    echo "KDF IV for MAC key: $tKdfMacIv"
+    echo "AES IV: $tAesIv"
     
     #echo "AES key: $tAesKey"
     #echo "MAC key: $tMacKey"
@@ -151,7 +151,7 @@ crypto_aes_encrypt_file()
         return 1
     fi
     
-	return 0
+    return 0
 }
 
 #
@@ -161,39 +161,39 @@ crypto_aes_encrypt_file()
 #
 crypto_aes_decrypt_file()
 {
-	local pInFile="$1"
-	local pOutFile="$2"
-	local pPassword="$3"
-	
-	if [ "$pInFile" = "$pOutFile" ]; then
-	    echo "ERROR: Input and output file cannot be the same"
-	    return 1
-	fi
-	
-	if [ -f "$pOutFile" ]; then
-	    echo "ERROR: Will NOT overwrite an existing encrypted file. Please delete '$pOutFile' first."
-	    return 1
-	fi
-	
+    local pInFile="$1"
+    local pOutFile="$2"
+    local pPassword="$3"
+    
+    if [ "$pInFile" = "$pOutFile" ]; then
+        echo "ERROR: Input and output file cannot be the same"
+        return 1
+    fi
+    
+    if [ -f "$pOutFile" ]; then
+        echo "ERROR: Will NOT overwrite an existing encrypted file. Please delete '$pOutFile' first."
+        return 1
+    fi
+    
     # the IV used in the KDF for obtaining the AES key
-	local tKdfAesIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 2>/dev/null | binary_to_hex`
-	echo "KDF IV for AES key: $tKdfAesIv"
-	
-	# the IV used in the KDF for obtaining the HMAC key
-	local tKdfMacIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$gCryptoKdfIvSize 2>/dev/null | binary_to_hex`
-	echo "KDF IV for MAC key: $tKdfMacIv"
-	
-	# the AES IV
-	local tAesIv=`dd if="$pInFile" bs=$gCryptoAesIvSize count=1 iflag=skip_bytes skip=$(($gCryptoKdfIvSize * 2)) 2>/dev/null | binary_to_hex`
-	echo "AES IV: $tAesIv"
-	
-	# the MAC over the KDF IVs, AES IV and ciphertext
-	local tZeroes=0000000000000000000000000000000000000000000000000000000000000000
-	local tMac=`dd if="$pInFile" bs=$gCryptoMacSize count=1 iflag=skip_bytes skip=$(($gCryptoKdfIvSize * 2 + $gCryptoAesIvSize)) 2>/dev/null | binary_to_hex`
+    local tKdfAesIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 2>/dev/null | binary_to_hex`
+    echo "KDF IV for AES key: $tKdfAesIv"
+    
+    # the IV used in the KDF for obtaining the HMAC key
+    local tKdfMacIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$gCryptoKdfIvSize 2>/dev/null | binary_to_hex`
+    echo "KDF IV for MAC key: $tKdfMacIv"
+    
+    # the AES IV
+    local tAesIv=`dd if="$pInFile" bs=$gCryptoAesIvSize count=1 iflag=skip_bytes skip=$(($gCryptoKdfIvSize * 2)) 2>/dev/null | binary_to_hex`
+    echo "AES IV: $tAesIv"
+    
+    # the MAC over the KDF IVs, AES IV and ciphertext
+    local tZeroes=0000000000000000000000000000000000000000000000000000000000000000
+    local tMac=`dd if="$pInFile" bs=$gCryptoMacSize count=1 iflag=skip_bytes skip=$(($gCryptoKdfIvSize * 2 + $gCryptoAesIvSize)) 2>/dev/null | binary_to_hex`
     echo "Stored MAC: $tMac"
-	
-	local tAesKey=`crypto_kdf "aes-$pPassword" $tKdfAesIv`  # the AES encryption key
-	local tMacKey=`crypto_kdf "hmac-$pPassword" $tKdfMacIv` # the HMAC integrity key
+    
+    local tAesKey=`crypto_kdf "aes-$pPassword" $tKdfAesIv`  # the AES encryption key
+    local tMacKey=`crypto_kdf "hmac-$pPassword" $tKdfMacIv` # the HMAC integrity key
     
     echo "Decrypting with $((${#tAesKey}/2 * 8))-bit key and $((${#tAesIv}/2 * 8))-bit IV"
     
@@ -202,9 +202,9 @@ crypto_aes_decrypt_file()
       hex_to_binary $tAesIv; 
       hex_to_binary $tZeroes;
       dd if="$pInFile" iflag=skip_bytes skip=$(($gCryptoKdfIvSize * 2 + $gCryptoAesIvSize + $gCryptoMacSize)) 2>/dev/null \
-	    | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out $pOutFile -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
+        | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out $pOutFile -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
     
-	if [ $? -ne 0 ]; then
+    if [ $? -ne 0 ]; then
         echo "ERROR: The OpenSSL enc tool failed decrypting"
         return 1
     fi
