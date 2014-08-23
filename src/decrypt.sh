@@ -4,8 +4,6 @@ set -e
 
 scriptdir=$(readlink -f $(dirname $0))
 
-. $scriptdir/shlibs/crypto.sh
-
 vInFile=$1
 vOutFile=$2
 
@@ -13,6 +11,8 @@ if [ $# -ne 2 ]; then
     echo "Usage: $0 <ciphertext> <plaintext>"
     exit 1
 fi
+
+. $scriptdir/shlibs/crypto.sh
 
 echo "Operation:"
 echo " * decrypt('$vInFile') -> '$vOutFile'"; echo;

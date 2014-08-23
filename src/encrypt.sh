@@ -1,9 +1,7 @@
-#!/bim/bash
+#!/bin/bash
 set -e
 
 scriptdir=$(readlink -f $(dirname $0))
-
-. "$scriptdir/shlibs/crypto.sh"
 
 vInFile=$1
 vOutFile=$2
@@ -12,6 +10,8 @@ if [ $# -ne 2 ]; then
     echo "Usage: $0 <plaintext> <ciphertext>"
     exit 1
 fi
+
+. "$scriptdir/shlibs/crypto.sh" >2
 
 echo "Operation:"
 echo " * encrypt('$vInFile') -> '$vOutFile'"; echo;
