@@ -17,7 +17,17 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
-. $scriptdir/shlibs/crypto.sh
+if [ -f "$vOutFile" ]; then
+    echo "ERROR: '$vOutFile' already exists. Will not overwrite so please delete."
+    exit 1
+fi
+
+if [ ! -f "$vInFile" ]; then
+    echo "ERROR: '$vInFile' does not exist."
+    exit 1
+fi
+
+. $scriptdir/shlibs/crypto.sh >&2
 
 echo "Operation:"
 echo " * decrypt('$vInFile') -> '$vOutFile'"; echo;

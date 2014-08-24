@@ -11,7 +11,12 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
-. "$scriptdir/shlibs/crypto.sh" >2
+if [ -f "$vOutFile" ]; then
+    echo "ERROR: '$vOutFile' already exists. Will not overwrite so please delete."
+    exit 1
+fi
+
+. "$scriptdir/shlibs/crypto.sh" >&2
 
 echo "Operation:"
 echo " * encrypt('$vInFile') -> '$vOutFile'"; echo;
@@ -40,7 +45,7 @@ echo
 
 if [ -f "$vInfile" ]; then
     crypto_aes_encrypt_file $vInFile $vOutFile "$vPassword"
-else if [ -d "$vInFile" ]; then
+elif [ -d "$vInFile" ]; then
     crypto_aes_encrypt_dir $vInFile $vOutFile "$vPassword"
 else
     echo "ERROR: '$vInFile' is not a file or a directory."
