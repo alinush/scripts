@@ -23,22 +23,22 @@ test_hex_to_binary_file() {
     fi
 }
 
-test_crypto_aes() {
+test_crypto_aes_file() {
     local tInputFile=`mktemp`
     local tOutputFile=`mktemp`
     local tDecryptedFile=`mktemp`
     local tPassword="my random password with spaces"
-    
+
     echo "hi all hi all hi all!" > $tInputFile
     
     echo "Encrypting '$tInputFile', storing in '$tOutputFile'"
 
-    rm $tOutputFile
+    rm -r $tOutputFile
     if ! crypto_aes_encrypt_file $tInputFile $tOutputFile "$tPassword"; then
         test_failed "Could not encrypt input file"
     fi
     
-    rm $tDecryptedFile
+    rm -r $tDecryptedFile
     if ! crypto_aes_decrypt_file $tOutputFile $tDecryptedFile "$tPassword"; then
         test_failed "Could not decrypt the encrypted file"
     fi
@@ -48,8 +48,39 @@ test_crypto_aes() {
     fi
 }
 
-test_hex_to_binary_file
-test_crypto_aes
+test_crypto_aes_dir() {
+    local tInputDir=`mktemp -d`
+    local tOutputFile=`mktemp`
+    local tDecryptedDir=`mktemp -d`
+    local tPassword="my random pass with spaces"
 
+    echo "some random directory file" > $tInputDir/somefile
+    
+    rm -r $tOutputFile
+    if ! crypto_aes_encrypt_dir "$tInputDir" "$tOutputFile" "$tPassword"; then
+        test_failed "Could not encrypt input directory"
+    fi
+
+    rm -r $tDecryptedDir
+    if ! crypto_aes_decrypt_file "$tOutputFile" "$tDecryptedDir" "$tPassword"; then
+        test_failed "Could not decrypt directory"
+    fi
+
+    if ! diff -rupN $tInputDir $tDecryptedDir/`basename $tInputDir`; then
+        test_failed "The original dir is different than the decrypted dir"
+    fi
+}
+
+echo
+echo "Testing hex conversion..."
+test_hex_to_binary_file
+
+echo
+echo "Testing AES file encryption..."
+test_crypto_aes_file
+
+echo
+echo "Testing AES directory encryption..."
+test_crypto_aes_dir
 
 tests_succeeded

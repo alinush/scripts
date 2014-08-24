@@ -1,4 +1,4 @@
-# Global variables: 
+#Global variables: 
 
 # The AES mode that this library will use. Please see 'man enc'
 # for documentation on other modes that you can use here.
@@ -85,7 +85,7 @@ crypto_hmac()
 }
 
 #
-# $1 the input file to encrypt
+# $1 the input file to encrypt or - for encrypting stdin
 # $2 the destination file to store the result
 # $3 the password to use, which will be turned into a 256-bit AES key using a KDF
 #
@@ -122,15 +122,26 @@ crypto_aes_encrypt_file()
     #echo "MAC key: $tMacKey"
     
     echo "Encrypting with $((${#tAesKey}/2 * 8))-bit key and $((${#tAesIv}/2 * 8))-bit IV"
+
+    # The type of file being encrypted: 0x00 for file, 0x01 for directory
+    local tFileType=00
+    if [ "$pInFile" == "-" ]; then
+        tFileType=01
+    fi
     
     # The destination encrypted file format is: << kdfAesIv, kdfMacIv, aesIv, hmac, ciphertext >>
     # The HMAC is computed over << kdfAesIv, kdfMacIv, aesiv, [32 zero bytes], ciphertext >>
-    tMac=`( hex_to_binary $tKdfAesIv;
-      hex_to_binary $tKdfMacIv;
-      hex_to_binary $tAesIv;
-      hex_to_binary $tMac;
-      openssl enc -e -nosalt -$gCryptoAesMode -in "$pInFile" -iv $tAesIv -K $tAesKey; ) \
-        | tee >(cat >$pOutFile) | crypto_hmac $tMacKey -hex`
+    tMac=`( 
+        hex_to_binary $tFileType
+        hex_to_binary $tKdfAesIv;
+        hex_to_binary $tKdfMacIv;
+        hex_to_binary $tAesIv;
+        hex_to_binary $tMac;
+        if [ "$pInFile" != "-" ]; then
+            openssl enc -e -nosalt -$gCryptoAesMode -in "$pInFile" -iv $tAesIv -K $tAesKey; 
+        else
+            openssl enc -e -nosalt -$gCryptoAesMode -iv $tAesIv -K $tAesKey;
+        fi) | tee >(cat >$pOutFile) | crypto_hmac $tMacKey -hex`
       
     if [ $? -ne 0 ]; then
         echo "ERROR: The OpenSSL enc tool failed encrypting"
@@ -142,7 +153,8 @@ crypto_aes_encrypt_file()
     local tOrigSize=`stat --printf %s $pOutFile`
     
     # Write in the actual MAC in the output file
-    hex_to_binary $tMac | dd of="$pOutFile" obs=$gCryptoMacSize count=1 conv=notrunc oflag=seek_bytes seek=$(($gCryptoKdfIvSize * 2 + $gCryptoAesIvSize)) 2>/dev/null
+    local tHeaderSize=$((1 + $gCryptoKdfIvSize * 2 + $gCryptoAesIvSize))
+    hex_to_binary $tMac | dd of="$pOutFile" obs=$gCryptoMacSize count=1 conv=notrunc oflag=seek_bytes seek=$tHeaderSize 2>/dev/null
     
     local tModifiedSize=`stat --printf %s $pOutFile`
         
@@ -156,63 +168,128 @@ crypto_aes_encrypt_file()
 
 #
 # $1 the input encrypted/ciphertext file
-# $2 the output file where the decrypted plaintext will be stored
+# $2 the output file where the decrypted plaintext will be stored or - for stdout
 # $3 the password used to derive the AES key from 
 #
-crypto_aes_decrypt_file()
-{
+crypto_aes_decrypt_file() {
     local pInFile="$1"
     local pOutFile="$2"
     local pPassword="$3"
     
     if [ "$pInFile" = "$pOutFile" ]; then
-        echo "ERROR: Input and output file cannot be the same"
+        echo "ERROR: Input and output file cannot be the same" >&2
         return 1
     fi
     
-    if [ -f "$pOutFile" ]; then
-        echo "ERROR: Will NOT overwrite an existing encrypted file. Please delete '$pOutFile' first."
+    local tSkipBytes=0
+    # the file type is stored as the first byte
+    local tFileType=`dd if="$pInFile" bs=1 count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    local tFileOrDir=
+    if [ "$tFileType" = "00" ]; then
+        echo "Type: file" >&2
+        tFileOrDir="file"
+    elif [ "$tFileType" = "01" ]; then
+        echo "Type: directory" >&2
+        tFileOrDir="directory"
+    else
+        echo "ERROR: Unknown encrypted content type (0x$tFileType)"
         return 1
     fi
-    
+ 
     # the IV used in the KDF for obtaining the AES key
-    local tKdfAesIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 2>/dev/null | binary_to_hex`
-    echo "KDF IV for AES key: $tKdfAesIv"
+    tSkipBytes=$(($tSkipBytes + 1))
+    local tKdfAesIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    echo "KDF IV for AES key: $tKdfAesIv" >&2
     
     # the IV used in the KDF for obtaining the HMAC key
-    local tKdfMacIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$gCryptoKdfIvSize 2>/dev/null | binary_to_hex`
-    echo "KDF IV for MAC key: $tKdfMacIv"
+    tSkipBytes=$(($tSkipBytes + $gCryptoKdfIvSize))
+    local tKdfMacIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    echo "KDF IV for MAC key: $tKdfMacIv" >&2
     
     # the AES IV
-    local tAesIv=`dd if="$pInFile" bs=$gCryptoAesIvSize count=1 iflag=skip_bytes skip=$(($gCryptoKdfIvSize * 2)) 2>/dev/null | binary_to_hex`
-    echo "AES IV: $tAesIv"
+    tSkipBytes=$(($tSkipBytes + $gCryptoKdfIvSize))
+    local tAesIv=`dd if="$pInFile" bs=$gCryptoAesIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    echo "AES IV: $tAesIv" >&2
     
     # the MAC over the KDF IVs, AES IV and ciphertext
+    tSkipBytes=$(($tSkipBytes + $gCryptoAesIvSize))
     local tZeroes=0000000000000000000000000000000000000000000000000000000000000000
-    local tMac=`dd if="$pInFile" bs=$gCryptoMacSize count=1 iflag=skip_bytes skip=$(($gCryptoKdfIvSize * 2 + $gCryptoAesIvSize)) 2>/dev/null | binary_to_hex`
-    echo "Stored MAC: $tMac"
+    local tMac=`dd if="$pInFile" bs=$gCryptoMacSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    echo "Stored MAC: $tMac" >&2
     
     local tAesKey=`crypto_kdf "aes-$pPassword" $tKdfAesIv`  # the AES encryption key
     local tMacKey=`crypto_kdf "hmac-$pPassword" $tKdfMacIv` # the HMAC integrity key
     
-    echo "Decrypting with $((${#tAesKey}/2 * 8))-bit key and $((${#tAesIv}/2 * 8))-bit IV"
-    
-    local tComputedMac=`( hex_to_binary $tKdfAesIv; 
-      hex_to_binary $tKdfMacIv;
-      hex_to_binary $tAesIv; 
-      hex_to_binary $tZeroes;
-      dd if="$pInFile" iflag=skip_bytes skip=$(($gCryptoKdfIvSize * 2 + $gCryptoAesIvSize + $gCryptoMacSize)) 2>/dev/null \
-        | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out $pOutFile -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
-    
+    echo "Decrypting $tFileOrDir with $((${#tAesKey}/2 * 8))-bit key and $((${#tAesIv}/2 * 8))-bit IV" >&2
+   
+    local tComputedMac= 
+    local tHeaderSize=$((1 + $gCryptoKdfIvSize * 2 + $gCryptoAesIvSize + $gCryptoMacSize)) 
+
+    if [ "$tFileType" == "00" ]; then
+        if [ -f "$pOutFile" ]; then
+            echo "ERROR: Will NOT overwrite an existing encrypted file. Please delete '$pOutFile' first." >&2
+            return 1
+        fi
+        
+        tComputedMac=`( 
+            hex_to_binary $tFileType;
+            hex_to_binary $tKdfAesIv; 
+            hex_to_binary $tKdfMacIv;
+            hex_to_binary $tAesIv; 
+            hex_to_binary $tZeroes;
+            dd if="$pInFile" iflag=skip_bytes skip=$tHeaderSize 2>/dev/null \
+             | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out $pOutFile -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
+    else
+        local tTempMacFile=`mktemp`
+
+        mkdir -p $pOutFile
+        
+        ( hex_to_binary $tFileType;
+        hex_to_binary $tKdfAesIv; 
+        hex_to_binary $tKdfMacIv;
+        hex_to_binary $tAesIv; 
+        hex_to_binary $tZeroes;
+        dd if="$pInFile" iflag=skip_bytes skip=$tHeaderSize 2>/dev/null ) \
+            | tee >(crypto_hmac $tMacKey -hex >$tTempMacFile) | tail -c +$(($tHeaderSize+1)) \
+            | openssl enc -d -nosalt -$gCryptoAesMode -iv $tAesIv -K $tAesKey | tar xz -C $pOutFile
+
+        tComputedMac=`cat $tTempMacFile` 
+        rm $tTempMacFile
+    fi
+
     if [ $? -ne 0 ]; then
-        echo "ERROR: The OpenSSL enc tool failed decrypting"
+        echo "ERROR: The OpenSSL enc tool failed decrypting" >&2
         return 1
     fi
     
-    echo "Computed MAC: $tComputedMac"
+    echo "Computed MAC: $tComputedMac" >&2
     
     if [ "$tMac" != "$tComputedMac" ]; then
-        echo "ERROR: Stored MAC '$tMac' did not match file's actual MAC '$tComputedMac'"
+        echo "ERROR: Stored MAC '$tMac' did not match file's actual MAC '$tComputedMac'" >&2
         return 1
     fi
+}
+
+#
+# $1 the directory to encrypt
+# $2 the output file where the encrypted directory will be stored
+# $3 the password used to derive the AES key from 
+#
+crypto_aes_encrypt_dir() {
+    local pInputDir="$1"
+    local pOutputFile="$2"
+    local pPassword="$3"
+
+    if [ ! -d "$pInputDir" ]; then
+        echo "ERROR: '$pInputDir' is not a directory!"
+        return 1
+    fi
+
+    local tParentDir=`dirname $pInputDir`
+    local tDirName=`basename $pInputDir`
+
+    (
+        cd $tParentDir;
+        tar cz $tDirName | crypto_aes_encrypt_file - "$pOutputFile" "$pPassword"
+    ) | cat
 }

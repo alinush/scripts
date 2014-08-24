@@ -38,6 +38,13 @@ echo "Thank you! Passwords match!"; echo
 echo " * Encrypting '$vInFile', storing in '$vOutFile' ..."
 echo
 
-crypto_aes_encrypt_file $vInFile $vOutFile $vPassword 
+if [ -f "$vInfile" ]; then
+    crypto_aes_encrypt_file $vInFile $vOutFile "$vPassword"
+else if [ -d "$vInFile" ]; then
+    crypto_aes_encrypt_dir $vInFile $vOutFile "$vPassword"
+else
+    echo "ERROR: '$vInFile' is not a file or a directory."
+    exit 1
+fi
 
-echo "All done!"
+echo "Encryption succeeded!"
