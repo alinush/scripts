@@ -1,5 +1,5 @@
-#Global variables: 
-
+# Global variables
+#
 # The AES mode that this library will use. Please see 'man enc'
 # for documentation on other modes that you can use here.
 gCryptoAesMode=aes-256-ctr
@@ -7,6 +7,16 @@ gCryptoAesMode=aes-256-ctr
 gCryptoKdfIvSize=32         # the KDF IV size in bytes
 gCryptoAesIvSize=16         # AES IV size in bytes
 gCryptoMacSize=32           # MAC size in bytes
+# 1 byte for version
+# 1 byte for type of plaintext (file or directory)
+# KDF IVs \times 2
+# AES IV
+# MAC
+gCryptoHeaderSize=$((1 + 1 + $gCryptoKdfIvSize * 2 + $gCryptoAesIvSize + $gCryptoMacSize))
+
+# The version of the crypto library stored in MAJOR.MINOR format, 4 bits for
+# each number. We start with 1.0 stored as 0001 0000 (bin) = 0x10 (hex)
+gCryptoVersionByteHex=10
 
 echo "Using crypto library... " >&2
 
@@ -131,8 +141,9 @@ crypto_aes_encrypt_file()
     
     # The destination encrypted file format is: << kdfAesIv, kdfMacIv, aesIv, hmac, ciphertext >>
     # The HMAC is computed over << kdfAesIv, kdfMacIv, aesiv, [32 zero bytes], ciphertext >>
-    tMac=`( 
-        hex_to_binary $tFileType
+    tMac=`(
+        hex_to_binary $gCryptoVersionByteHex;
+        hex_to_binary $tFileType;
         hex_to_binary $tKdfAesIv;
         hex_to_binary $tKdfMacIv;
         hex_to_binary $tAesIv;
@@ -152,9 +163,8 @@ crypto_aes_encrypt_file()
     
     local tOrigSize=`stat --printf %s $pOutFile`
     
-    # Write in the actual MAC in the output file
-    local tHeaderSize=$((1 + $gCryptoKdfIvSize * 2 + $gCryptoAesIvSize))
-    hex_to_binary $tMac | dd of="$pOutFile" obs=$gCryptoMacSize count=1 conv=notrunc oflag=seek_bytes seek=$tHeaderSize 2>/dev/null
+    # Write in the actual MAC in the output filef
+    hex_to_binary $tMac | dd of="$pOutFile" obs=$gCryptoMacSize count=1 conv=notrunc oflag=seek_bytes seek=$(($gCryptoHeaderSize-$gCryptoMacSize)) 2>/dev/null
     
     local tModifiedSize=`stat --printf %s $pOutFile`
         
@@ -182,7 +192,14 @@ crypto_aes_decrypt_file() {
     fi
     
     local tSkipBytes=0
+    local tVersionByte=`dd if="$pInFile" bs=1 count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    if [ "$tVersionByte" != "$gCryptoVersionByteHex" ]; then
+        echo "ERROR: Ciphertext file version (0x$tVersionByte) differs from this script's version (0x$gCryptoVersionByteHex)"
+        return 1
+    fi
+    
     # the file type is stored as the first byte
+    tSkipBytes=$(($tSkipBytes + 1))
     local tFileType=`dd if="$pInFile" bs=1 count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
     local tFileOrDir=
     if [ "$tFileType" = "00" ]; then
@@ -223,7 +240,6 @@ crypto_aes_decrypt_file() {
     echo "Decrypting $tFileOrDir with $((${#tAesKey}/2 * 8))-bit key and $((${#tAesIv}/2 * 8))-bit IV ..." >&2
    
     local tComputedMac= 
-    local tHeaderSize=$((1 + $gCryptoKdfIvSize * 2 + $gCryptoAesIvSize + $gCryptoMacSize)) 
 
     if [ "$tFileType" == "00" ]; then
         if [ -f "$pOutFile" ]; then
@@ -231,26 +247,28 @@ crypto_aes_decrypt_file() {
             return 1
         fi
         
-        tComputedMac=`( 
+        tComputedMac=`(
+            hex_to_binary $tVersionByte;
             hex_to_binary $tFileType;
             hex_to_binary $tKdfAesIv; 
             hex_to_binary $tKdfMacIv;
             hex_to_binary $tAesIv; 
             hex_to_binary $tZeroes;
-            dd if="$pInFile" iflag=skip_bytes skip=$tHeaderSize 2>/dev/null \
+            dd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null \
              | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out $pOutFile -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
     else
         local tTempMacFile=`mktemp`
 
         mkdir -p $pOutFile
         
-        ( hex_to_binary $tFileType;
-        hex_to_binary $tKdfAesIv; 
+        ( hex_to_binary $tVersionByte;
+        hex_to_binary $tFileType;
+        hex_to_binary $tKdfAesIv;
         hex_to_binary $tKdfMacIv;
         hex_to_binary $tAesIv; 
         hex_to_binary $tZeroes;
-        dd if="$pInFile" iflag=skip_bytes skip=$tHeaderSize 2>/dev/null ) \
-            | tee >(crypto_hmac $tMacKey -hex >$tTempMacFile) | tail -c +$(($tHeaderSize+1)) \
+        dd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null ) \
+            | tee >(crypto_hmac $tMacKey -hex >$tTempMacFile) | tail -c +$(($gCryptoHeaderSize+1)) \
             | openssl enc -d -nosalt -$gCryptoAesMode -iv $tAesIv -K $tAesKey | tar xz -C $pOutFile
 
         tComputedMac=`cat $tTempMacFile` 
