@@ -20,21 +20,19 @@ gCryptoVersionByteHex=10
 
 echo "Using crypto library... " >&2
 
-set -e
 echo " * Checking for tools..." >&2
 echo "   + OpenSSL binary..." >&2
-which openssl &>/dev/null
-echo "   + sed..." >&2
-which sed &>/dev/null
+which openssl &>/dev/null || { echo " missing!"; exit 1; }
+echo "   + sed..." >&2 
+which sed &>/dev/null || { echo " missing!"; exit 1; }
 echo "   + printf..." >&2
-which printf &>/dev/null
+which printf &>/dev/null || { echo " missing!"; exit 1; }
 echo "   + hexdump..." >&2
-which hexdump &>/dev/null
+which hexdump &>/dev/null || { echo " missing!"; exit 1; }
 echo "   + sha256sum..." >&2
-which sha256sum &>/dev/null
+which sha256sum &>/dev/null || { echo " missing!"; exit 1; }
 echo " * All are tools here!" >&2
 echo  >&2
-set +e
 
 #
 # $1 hex string to be converted to binary
@@ -239,7 +237,8 @@ crypto_aes_decrypt_file() {
     
     echo "Decrypting $tFileOrDir with $((${#tAesKey}/2 * 8))-bit key and $((${#tAesIv}/2 * 8))-bit IV ..." >&2
    
-    local tComputedMac= 
+    local tComputedMac=
+    local tRet= 
 
     if [ "$tFileType" == "00" ]; then
         if [ -f "$pOutFile" ]; then
@@ -256,6 +255,8 @@ crypto_aes_decrypt_file() {
             hex_to_binary $tZeroes;
             dd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null \
              | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out $pOutFile -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
+             
+        tRet=$?
     else
         local tTempMacFile=`mktemp`
 
@@ -271,11 +272,13 @@ crypto_aes_decrypt_file() {
             | tee >(crypto_hmac $tMacKey -hex >$tTempMacFile) | tail -c +$(($gCryptoHeaderSize+1)) \
             | openssl enc -d -nosalt -$gCryptoAesMode -iv $tAesIv -K $tAesKey | tar xz -C $pOutFile
 
+        tRet=$?
+        
         tComputedMac=`cat $tTempMacFile` 
         rm $tTempMacFile
     fi
 
-    if [ $? -ne 0 ]; then
+    if [ $tRet -ne 0 ]; then
         echo "ERROR: The OpenSSL enc tool failed decrypting" >&2
         return 1
     fi
