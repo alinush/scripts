@@ -12,6 +12,11 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
+if [ ! -f "$vInFile" -a ! -d "$vInFile" ]; then
+    echo "ERROR: '$vInFile' is not a file nor a directory"
+    exit 1
+fi
+
 if [ -f "$vOutFile" ]; then
     echo "ERROR: '$vOutFile' already exists. Will not overwrite so please delete."
     exit 1
