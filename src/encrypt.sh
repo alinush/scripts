@@ -44,7 +44,7 @@ echo "Thank you! Passwords match!"; echo
 echo " * Encrypting '$vInFile', storing in '$vOutFile' ..."
 echo
 
-if [ -f "$vInfile" ]; then
+if [ -f "$vInFile" ]; then
     crypto_aes_encrypt_file $vInFile $vOutFile "$vPassword"
 elif [ -d "$vInFile" ]; then
     crypto_aes_encrypt_dir $vInFile $vOutFile "$vPassword"
