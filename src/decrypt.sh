@@ -8,12 +8,7 @@ vInFile=$1
 vOutFile=$2
 
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 <ciphertext> <plaintext> OPTIONS"
-    echo
-    echo "OPTIONS:"
-    echo "  --directory     enable this if you are decrypting a directory"
-    echo "  --file          enable this if you are decrypting a file"
-    echo 
+    echo "Usage: `basename $0` <ciphertext> <plaintext>"
     exit 1
 fi
 

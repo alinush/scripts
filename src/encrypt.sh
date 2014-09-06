@@ -8,7 +8,7 @@ vInFile=$1
 vOutFile=$2
 
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 <plaintext> <ciphertext>"
+    echo "Usage: `basename $0` <plaintext> <ciphertext>"
     exit 1
 fi
 
