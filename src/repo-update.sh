@@ -45,5 +45,5 @@ echo "Working with repositories in '$vRepoDir'..."
 echo
 
 for d in `find "$vRepoDir" -maxdepth 1 -type d | grep -v "^$vRepoDir$"`; do
-    echo "$d -> `repo_print_info $d`"
+    echo "`basename $d` -> `repo_print_info $d`"
 done
