@@ -202,6 +202,10 @@ crypto_aes_decrypt_file() {
     local tFileOrDir=
     if [ "$tFileType" = "00" ]; then
         echo "Type: file" >&2
+        if [ -d "$pOutFile" ]; then
+            pOutFile="$(readlink -f $pOutFile)/$(basename $pInFile).dec"
+            echo "Changed destination file to '$pOutFile' since you specified a directory"
+        fi
         tFileOrDir="file"
     elif [ "$tFileType" = "01" ]; then
         echo "Type: directory" >&2
