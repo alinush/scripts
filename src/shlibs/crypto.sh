@@ -113,6 +113,11 @@ crypto_aes_encrypt_file()
         echo "ERROR: Will NOT overwrite an existing encrypted file. Please delete '$pOutFile' first." >&2
         return 1
     fi
+
+    if [ -d "$pOutFile" ]; then
+        echo "ERROR: Output file cannot be a directory."
+        return 1
+    fi
     
     # Temporary variables
     local tKdfAesIv=`crypto_get_random_iv $gCryptoKdfIvSize`    # the IV used in the KDF for obtaining the AES key
