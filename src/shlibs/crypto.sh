@@ -97,6 +97,8 @@ crypto_hmac()
 # $2 the destination file to store the result
 # $3 the password to use, which will be turned into a 256-bit AES key using a KDF
 #
+# Returns: 0 for success, 1 for failure
+#
 crypto_aes_encrypt_file()
 {
     # Variables for parameters

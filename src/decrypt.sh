@@ -32,6 +32,8 @@ read -s -p " * Please enter password: " vPassword; echo;
 echo " * Decrypting '$vInFile', storing in '$vOutFile' ..."
 echo
 
-crypto_aes_decrypt_file $vInFile $vOutFile "$vPassword"
+if ! crypto_aes_decrypt_file $vInFile $vOutFile "$vPassword"; then
+    exit 1
+fi
 
 echo "Decryption was successful!"

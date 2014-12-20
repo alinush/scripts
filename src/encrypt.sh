@@ -54,9 +54,13 @@ echo " * Encrypting '$vInFile', storing in '$vOutFile' ..."
 echo
 
 if [ -f "$vInFile" ]; then
-    crypto_aes_encrypt_file $vInFile $vOutFile "$vPassword"
+    if ! crypto_aes_encrypt_file $vInFile $vOutFile "$vPassword"; then
+        exit 1
+    fi
 elif [ -d "$vInFile" ]; then
-    crypto_aes_encrypt_dir $vInFile $vOutFile "$vPassword"
+    if ! crypto_aes_encrypt_dir $vInFile $vOutFile "$vPassword"; then
+        exit 1
+    fi
 else
     echo "ERROR: '$vInFile' is not a file or a directory."
     exit 1
