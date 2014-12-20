@@ -24,6 +24,10 @@ fi
 
 . "$scriptdir/shlibs/crypto.sh" >&2
 
+if [ -d "$vOutFile" ]; then
+    vOutFile="`readlink -f $vOutFile`/`basename $vInFile`.enc"
+fi
+
 echo "Operation:"
 echo " * encrypt('$vInFile') -> '$vOutFile'"; echo;
 
