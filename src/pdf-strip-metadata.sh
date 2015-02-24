@@ -1,5 +1,8 @@
 set -e
 
+which pdftk || { echo "ERROR: Please install pdftk"; exit 1; }
+which qpdf || { echo "ERROR: Please install qpdf"; exit 1; }
+
 pdftk_strip_metadata() {
    pdftk $1 dump_data | \
    sed -e 's/\(InfoValue:\)\s.*/\1\ /g' | \
