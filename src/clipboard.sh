@@ -29,7 +29,7 @@ fi
 
 echo "Copying from $vFile..."
 
-vResult=`grep "$1" "$vFile"`
+vResult=`grep "^$1" "$vFile"`
 vNumLines=`echo "$vResult" | wc -l | cut -f 1 -d' '`
 vResult=`echo $vResult | head -n 1`
 
