@@ -42,5 +42,5 @@ if [ $vNumLines != 1 ]; then
     echo "WARNING: Multiple matches! Only using the first one for '$vKey'"
 fi
 
-echo "Copied value for '$vKey' key!"
 echo -n "$vValue" | xclip -sel clip
+echo "Copied value for '$vKey' key!"
