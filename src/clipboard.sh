@@ -7,6 +7,12 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+if [ "$1" == "-c" -o "$1" == "--clear" ]; then
+    echo -n | xclip -sel clip
+    echo "Cleared clipboard!"
+    exit 0
+fi
+
 if [ ! -f "$vConfFile" ]; then
     echo "ERROR: No config file at '$vConfFile'"
     exit 1
