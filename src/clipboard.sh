@@ -18,7 +18,7 @@ if [ ! -f "$vConfFile" ]; then
     exit 1
 fi
 
-vNumLines=`wc -l $vConfFile | cut -f 1 -d' '` 
+vNumLines=`wc -l $vConfFile | cut -f 1 -d' '`
 
 if [ $vNumLines != 1 ]; then
     echo "ERROR: '$vConfFile' can only have one line"
@@ -30,14 +30,14 @@ vFile=`echo $vFile`
 
 if [ ! -f "$vFile" ]; then
     echo "ERROR: The '$vFile' file to grep in does not exist"
-    exit 1 
+    exit 1
 fi
 
 echo "Copying from $vFile..."
 
 vResult=`grep "^$1" "$vFile"`
 vNumLines=`echo "$vResult" | wc -l | cut -f 1 -d' '`
-vResult=`echo $vResult | head -n 1`
+vResult=`echo "$vResult" | head -n 1`
 
 if [ -z "$vResult" ]; then
     echo "ERROR: Nothing found for key '$1'"
