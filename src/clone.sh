@@ -3,9 +3,6 @@
 vRepo=$1
 vUser='alinush'
 
-# Discard first parameter
-shift 1
-
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <repository-name> [OPTIONS]"
     echo
@@ -14,7 +11,11 @@ if [ $# -ne 1 ]; then
     echo "OPTIONS:"
     echo "You can pass in any extra options you would normally pass to"
     echo "'git clone <reponame>', such as --recursive"
+    exit 1
 fi
+
+# Discard first parameter
+shift 1
 
 echo; echo "Trying GitHub for '$vRepo'..."; echo
 if ! git clone git@github.com:alinush/${vRepo}.git $@; then
