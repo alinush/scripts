@@ -1,5 +1,7 @@
 #!/bin/bash
 
+which jhead || { echo "ERROR: You need to have 'jhead' installed"; exit 1; }
+
 if [ $# -ne 2 ]; then
     echo "Replaces all EXIF dates in picture files that match the"
     echo "specified pattern with the specified date"

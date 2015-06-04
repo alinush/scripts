@@ -1,3 +1,4 @@
+which jhead || { echo "ERROR: You need to have 'jhead' installed"; exit 1; }
 
 OIFS="$IFS"
 IFS=$'\n'
