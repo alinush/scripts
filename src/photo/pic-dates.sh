@@ -6,7 +6,7 @@ for file in `find -type f | grep -v Thumbs.db`; do
     ispic=0
     nodate=0
 
-    jhead $file 2>&1 >/dev/null && ispic=1
+    jhead "$file" 2>&1 >/dev/null && ispic=1
     date=`jhead "$file" | grep "Date/Time" | cut -d':' -f 2-`
     [ -z "$date" ] && { nodate=1 ; date="*Date not set"; }
 
