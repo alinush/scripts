@@ -16,7 +16,7 @@ rm -f /tmp/gen.sh
 # Silly findimagedupes doesn't work with paths that have spaces in them
 ln -sf "$scriptdir/shlibs/generate.sh" /tmp/gen.sh
 chmod +x /tmp/gen.sh
-findimagedupes -R --threshold="95%" -p=/tmp/gen.sh $1
+findimagedupes -R --threshold="97%" -p=/tmp/gen.sh $1
 
 echo
 echo "Executing commands in '$destfile'..."

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-which jhead || { echo "ERROR: You need to have 'jhead' installed"; exit 1; }
-which exiftool || { echo "ERROR: You need to have 'exiftool' installed"; exit 1; }
+which jhead >/dev/null || { echo "ERROR: You need to have 'jhead' installed"; exit 1; }
+which exiftool >/dev/null || { echo "ERROR: You need to have 'exiftool' installed"; exit 1; }
 
 if [ $# -ne 2 ]; then
     echo "Replaces all EXIF dates in picture files that match the"
@@ -13,7 +13,15 @@ if [ $# -ne 2 ]; then
 fi
 
 pattern=${1:-"2002"}
-newdate=${2:-"2003:07:28-00:00-00"}
+newdate=${2:-"2003:07:28-00:00:00"}
+
+if ! echo "$newdate" | grep "^[0-9]\{4\}:[0-9]\{2\}:[0-9]\{2\}-[0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}$"; then
+    echo "ERROR: Date must be in YYYY:MM:DD-hh:mm:ss format"
+    echo
+    echo "Example: 2003:07:28-13:47:59 (that's 1:37pm and 59s)"
+    echo
+    exit 1
+fi
 
 OIFS="$IFS"
 IFS=$'\n'
