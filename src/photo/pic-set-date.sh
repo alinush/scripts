@@ -30,7 +30,7 @@ for file in `find -type f | grep -v Thumbs.db`; do
     nodate=0
 
     jhead $file 2>&1 >/dev/null && ispic=1
-    date=`jhead "$file" | grep "Date/Time" | cut -d':' -f 2-`
+    date=`jhead "$file" 2>/dev/null | grep "Date/Time" | cut -d':' -f 2-`
     [ -z "$date" ] && nodate=1
     matched=`echo $date | grep "$pattern"`
 
