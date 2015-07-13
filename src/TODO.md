@@ -7,7 +7,3 @@ TODO
  + `encrypt.sh` and `decrypt.sh`
     - Remove .enc extension of encrypted files, if present.
     - Allow multiple inputs to `encrypt.sh` (and `decrypt.sh`?) and maybe tar them up and encrypt the tar
- + `vob2mp4.sh`
-    - `avconv -i 'file.vob' -vf yadif -strict experimental 'out.mp4'`
-    - `avconv -i 'concat:file1.vob|file2.vob' -vf yadif -strict experimental 'out.mp4'`
-      + `-vf yadif` is for deinterlacing
