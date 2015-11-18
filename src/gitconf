@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "Global config"
+echo "-------------"
+git config --global -l
+
+echo
+
+echo "Repository-specific (local) config"
+echo "----------------------------------"
+git config --local -l
