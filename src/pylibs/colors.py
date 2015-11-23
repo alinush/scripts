@@ -1,0 +1,7 @@
+cTxtGreen       = '\033[32m'
+cTxtBoldGreen   = '\033[1;32m'
+cTxtRed         = '\033[31m'
+cTxtBoldRed     = '\033[1;31m'
+cTxtBlue        = '\033[34m'
+cTxtBoldBlue    = '\033[1;34m'
+cTxtDefault     = '\033[0m'

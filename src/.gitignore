@@ -1,2 +1,4 @@
-clipboard.conf
-TODO.html
+/clipboard.conf
+/TODO.html
+
+*.pyc
