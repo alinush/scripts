@@ -33,7 +33,17 @@ def git_repo_updated(res, d):
     else:
         status = cTxtBoldRed + "(unknown Git update status)"
 
-    print d + " -> " + status + cTxtDefault
+    print cTxtBoldBlue + "[Git] " + cTxtDefault + d + " -> " + status + cTxtDefault
+
+
+def svn_repo_updated(res, d):
+    status = cTxtBoldRed + "(updated successfully)"
+    stdout, stderr = res
+
+    if len(stdout) == 0:
+        status = cTxtBoldGreen + "(already up-to-date)"
+
+    print cTxtGreen + "[SVN] " + cTxtDefault + d + " -> " + status + cTxtDefault
 
 
 def lambda_factory(d):
