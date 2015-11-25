@@ -31,7 +31,8 @@ def git_repo_updated(res, d):
     elif re.compile("Cannot pull with rebase: You have unstaged changes\.").match(stderr):
         status = cTxtBoldRed + "(cannot pull, please stash changes first)"
     else:
-        status = cTxtBoldRed + "(unknown Git update status)"
+        pass
+    #    status = cTxtBoldRed + "(unknown Git update status)"
 
     print cTxtBoldBlue + "[Git] " + cTxtDefault + d + " -> " + status + cTxtDefault
 
