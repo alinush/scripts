@@ -19,17 +19,19 @@ def create_proc(cmd, d):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
     out, err = p.communicate()
-    return (out, err)
+    return (out, err, p.returncode)
 
 
 def git_repo_updated(res, d):
     status = cTxtBoldRed + "(updated successfully)"
-    stdout, stderr = res
+    stdout, stderr, errcode = res
 
     if re.compile("Current branch .* is up to date").match(stdout):
         status = cTxtBoldGreen + "(already up-to-date)"
     elif re.compile("Cannot pull with rebase: You have unstaged changes\.").match(stderr):
         status = cTxtBoldRed + "(cannot pull, please stash changes first)"
+    elif errcode != 0:
+        status = cTxtBoldRed + "(unknown error, return code " + str(errcode) + ")"
     else:
         pass
     #    status = cTxtBoldRed + "(unknown Git update status)"
