@@ -7,6 +7,7 @@ TODO
  - Handle repositories with submodules (update submodules as well)
  - Add `<repo_name>` argument to specify repo (just updates that repo)
  - Add `--stash` parameter to stash changes and pull (for Git repos)
+ - Add config-file that specifies extra repo directories to work with
 
 `encrypt.sh` and `decrypt.sh`
 -----------------------------
