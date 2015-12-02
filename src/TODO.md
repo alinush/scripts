@@ -7,6 +7,7 @@ TODO
     - Figure out how to handle ambiguities
  + `repo-update.py`:
     - Handle repositories with submodules (update submodules as well)
+    - Add `<repo_name>` argument to specify repo (just updates that repo)
     - Add `--stash` parameter to stash changes and pull (for Git repos)
  + `encrypt.sh` and `decrypt.sh`
     - Remove .enc extension of encrypted files, if present.
