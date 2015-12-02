@@ -7,7 +7,7 @@ TODO
  - Handle repositories with submodules (update submodules as well)
  - Add `<repo_name>` argument to specify repo (just updates that repo)
  - Add `--stash` parameter to stash changes and pull (for Git repos)
- - Add config-file that specifies extra repo directories to work with
+ - [DONE] Add config-file that specifies extra repo directories to work with
 
 `encrypt.sh` and `decrypt.sh`
 -----------------------------
@@ -16,7 +16,7 @@ TODO
 
 Others
 ------
- + Write a `hashdir` script that recursively hashes a directory with SHA256
+ + [DONE] Write a `hashdir` script that recursively hashes a directory with SHA256
  + Fix `gacp` to check for the last commit message, and if it's the same as the current one, it should not commit nor push.
  + Write a script that renames "Bad Linux File Name" into "better-linux-file-name"
  + Figure out how to handle ambiguities in `clone.sh`
