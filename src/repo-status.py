@@ -4,7 +4,7 @@ import subprocess
 import os
 import threading
 from pylibs.colors import *
-from pylibs.repodir import REPO_DIR
+from pylibs.repodir import REPOS_DIRS
 
 lock = threading.Lock()
 
@@ -44,32 +44,33 @@ def svn_get_info(d, status):
 
 threads = []
 
-print "Printing status of repositories in '%s'\n" % REPO_DIR
+print "Printing status of repositories in '%s'\n" % REPOS_DIRS
 
-for d in os.listdir(REPO_DIR):
-    #print "Looking at '%s' ..." % d
-    os.chdir(REPO_DIR + d)
-    if os.path.isdir(".git"):
-        cmd = ["git", "status"]
-        t = "git"
-    elif os.path.isdir(".svn"):
-        cmd = ["svn", "status"]
-        t = "svn"
-    else:
-        print d + " -> " + cTxtBoldRed + "(not a repo)" + cTxtDefault
-        continue
-    os.chdir(REPO_DIR)
+for reposDir in REPOS_DIRS:
+    for d in os.listdir(reposDir):
+        #print "Looking at '%s' ..." % d
+        os.chdir(reposDir + d)
+        if os.path.isdir(".git"):
+            cmd = ["git", "status"]
+            t = "git"
+        elif os.path.isdir(".svn"):
+            cmd = ["svn", "status"]
+            t = "svn"
+        else:
+            print d + " -> " + cTxtBoldRed + "(not a repo)" + cTxtDefault
+            continue
+        os.chdir(reposDir)
 
-    sp = subprocess.Popen(
-        cmd,
-        cwd=REPO_DIR + d,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+        sp = subprocess.Popen(
+            cmd,
+            cwd=reposDir + d,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
 
-    thread = threading.Thread(target=repo_get_info, args=[d, t, sp])
-    thread.start()
-    threads.append(thread)
+        thread = threading.Thread(target=repo_get_info, args=[d, t, sp])
+        thread.start()
+        threads.append(thread)
 
 for th in threads:
     th.join()

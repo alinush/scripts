@@ -5,7 +5,7 @@ import re
 import subprocess
 from multiprocessing.pool import ThreadPool
 from pylibs.colors import *
-from pylibs.repodir import REPO_DIR
+from pylibs.repodir import REPOS_DIRS
 
 pool = ThreadPool(16)
 procs = []
@@ -52,27 +52,29 @@ def svn_repo_updated(res, d):
 def lambda_factory(d):
     return lambda res: git_repo_updated(res, d)
 
-for d in os.listdir(REPO_DIR):
-    #print "Looking at '%s' ..." % d
-    os.chdir(REPO_DIR + d)
-    if os.path.isdir(".git"):
-        cmd = ["git", "pull", "--rebase"]
-        t = "git"
-        repo_updated = lambda_factory(d)
-    elif os.path.isdir(".svn"):
-        cmd = ["svn", "update"]
-        t = "svn"
-    else:
-        print d + " -> " + cTxtBoldRed + "(not a repo)" + cTxtDefault
-        continue
-    os.chdir(REPO_DIR)
+print "Looking at repos in '%s' ...\n" % REPOS_DIRS
 
-    procs.append(pool.apply_async(
-        func=create_proc,
-        args=(cmd, REPO_DIR + d),
-        callback=repo_updated
+for reposDir in REPOS_DIRS:
+    for d in os.listdir(reposDir):
+        os.chdir(reposDir + d)
+        if os.path.isdir(".git"):
+            cmd = ["git", "pull", "--rebase"]
+            t = "git"
+            repo_updated = lambda_factory(d)
+        elif os.path.isdir(".svn"):
+            cmd = ["svn", "update"]
+            t = "svn"
+        else:
+            print d + " -> " + cTxtBoldRed + "(not a repo)" + cTxtDefault
+            continue
+        os.chdir(reposDir)
+
+        procs.append(pool.apply_async(
+            func=create_proc,
+            args=(cmd, reposDir + d),
+            callback=repo_updated
+            )
         )
-    )
 
 # Close the pool and wait for each running task to complete
 pool.close()
