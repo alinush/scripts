@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+
+vDir=$1
+
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <dir-name> [OPTIONS]"
+    echo
+    echo "Computes a SHA256 hash of the specified directory"
+    echo
+    echo "OPTIONS:"
+    echo "No options for now."
+    exit 1
+fi
+
+# Discard first parameter
+shift 1
+
+[ ! -d "$vDir" ] && { echo "ERROR: '$vDir' needs to be a directory"; exit 1; }
+
+cd "$vDir";
+sha256deep -l -r . | sort | sha256sum
