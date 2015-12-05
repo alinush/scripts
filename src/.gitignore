@@ -1,5 +1,7 @@
 /clipboard.conf
 /repos.conf
+/remotes.conf
+
 /TODO.html
 
 *.pyc
