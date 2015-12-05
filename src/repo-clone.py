@@ -51,6 +51,10 @@ def main(repo_name, dir_name):
     procs = []
     i = 1
 
+    if len(REMOTES) == 0:
+        print "ERROR: Please configure remotes in remotes.conf"
+        return
+
     if os.path.isdir(dir_name):
         print "ERROR: Target directory '%s' already exist. Please specify another one (see --help).\n" % dir_name
         return
@@ -81,7 +85,7 @@ def main(repo_name, dir_name):
         os.rename(dir_name + str(clonedno), dir_name)
         print "Found repository successfully! Stored in '%s' directory." % dir_name
     else:
-        print "WARNING: Found multiple repositories remotely! Cloned all of them in '%v[1-9]*', so please take a look at ALL the directories." % dir_name
+        print "WARNING: Found multiple repositories remotely! Cloned all of them in '%s[1-9]*', so please take a look at ALL the directories." % dir_name
     print
 
 
