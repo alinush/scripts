@@ -54,11 +54,13 @@ def main(repo_name, dir_name):
     if os.path.isdir(dir_name):
         print "ERROR: Target directory '%s' already exist. Please specify another one (see --help).\n" % dir_name
         return
+    else:
+        os.mkdir(dir_name)
 
     for remote in REMOTES:
         while os.path.isdir(repo_name + str(i)):
             i = i+1
-        cmd = ["git", "clone", remote + repo_name + ".git", repo_name + str(i)]
+        cmd = ["git", "clone", remote + repo_name + ".git", dir_name + str(i)]
 
         #print "Running %s ..." % cmd
         procs.append(pool.apply_async(
@@ -74,8 +76,13 @@ def main(repo_name, dir_name):
     pool.close()
     pool.join()
 
+    print
     if cloned == 1:
-        os.rename(repo_name + str(clonedno), dir_name)
+        os.rename(dir_name + str(clonedno), dir_name)
+        print "Found repository successfully! Stored in '%s' directory." % dir_name
+    else:
+        print "WARNING: Found multiple repositories remotely! Cloned all of them in '%v[1-9]*', so please take a look at ALL the directories." % dir_name
+    print
 
 
 if __name__ == '__main__':

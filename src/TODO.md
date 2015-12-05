@@ -19,5 +19,5 @@ Others
  + [DONE] Write a `hashdir` script that recursively hashes a directory with SHA256
  + Fix `gacp` to check for the last commit message, and if it's the same as the current one, it should not commit nor push.
  + Write a script that renames "Bad Linux File Name" into "better-linux-file-name"
- + Figure out how to handle ambiguities in `clone.sh`
+ + [DONE] Figure out how to handle ambiguities in `clone.sh`
 
