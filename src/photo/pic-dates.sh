@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [ "$1" == "-h" -o "$1" == "--help" ]; then
     echo "Usage: `basename $0` [dir1 dir2 dir3 ...]"
     echo
@@ -19,7 +21,7 @@ while [ $# -gt 0 ]; do
         ispic=0
         nodate=0
 
-        jhead "$file" 2>&1 >/dev/null && ispic=1
+        jhead "$file" >/dev/null 2>/dev/null && ispic=1
         date=`jhead "$file" | grep "Date/Time" | cut -d':' -f 2-`
         [ -z "$date" ] && { nodate=1 ; date="*Date not set"; }
 

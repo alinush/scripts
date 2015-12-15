@@ -5,7 +5,8 @@ which exiftool >/dev/null || { echo "ERROR: You need to have 'exiftool' installe
 
 if [ $# -ne 2 ]; then
     echo "Replaces all EXIF dates in picture files that match the"
-    echo "specified pattern with the specified date"
+    echo "specified pattern with the specified date. The pattern should"
+    echo "be given in a yyyy:mm:dd format, at the desired granularity."
     echo
     echo "Usage: `basename $0` <pattern> <ts-in-yyyy:mm:dd-hh:mm:ss>"
     echo
