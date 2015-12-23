@@ -84,6 +84,8 @@ def main(repo_name, dir_name):
     if cloned == 1:
         os.rename(dir_name + str(clonedno), dir_name)
         print "Found repository successfully! Stored in '%s' directory." % dir_name
+    elif cloned == 0:
+        print "No '%s' repository was found!" % repo_name
     else:
         print "WARNING: Found multiple repositories remotely! Cloned all of them in '%s[1-9]*', so please take a look at ALL the directories." % dir_name
     print
