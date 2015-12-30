@@ -2,6 +2,7 @@
 
 import subprocess
 import os
+import click
 import threading
 from pylibs.colors import *
 from pylibs.repodir import REPOS_DIRS
@@ -44,33 +45,50 @@ def svn_get_info(d, status):
 
 threads = []
 
-print "Printing status of repositories in '%s'\n" % REPOS_DIRS
 
-for reposDir in REPOS_DIRS:
-    for d in os.listdir(reposDir):
-        #print "Looking at '%s' ..." % d
-        os.chdir(reposDir + d)
-        if os.path.isdir(".git"):
-            cmd = ["git", "status"]
-            t = "git"
-        elif os.path.isdir(".svn"):
-            cmd = ["svn", "status"]
-            t = "svn"
-        else:
-            print d + " -> " + cTxtBoldRed + "(not a repo)" + cTxtDefault
-            continue
-        os.chdir(reposDir)
+@click.command()
+@click.argument('dir_name', required=False, type=click.STRING)
+def main(dir_name):
+    if dir_name is None:
+        dirs = REPOS_DIRS
+    else:
+        dirs = [ dir_name ]
 
-        sp = subprocess.Popen(
-            cmd,
-            cwd=reposDir + d,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+    print "Printing status of repositories in '%s'\n" % dirs
 
-        thread = threading.Thread(target=repo_get_info, args=[d, t, sp])
-        thread.start()
-        threads.append(thread)
+    for reposDir in dirs:
+        parent = os.path.abspath(reposDir)
 
-for th in threads:
-    th.join()
+        for d in os.listdir(parent):
+
+            #print "Looking at '%s' in %s ..." % (d, parent)
+            os.chdir(os.path.join(parent, d))
+            if os.path.isdir(".git"):
+                cmd = ["git", "status"]
+                t = "git"
+            elif os.path.isdir(".svn"):
+                cmd = ["svn", "status"]
+                t = "svn"
+            else:
+                print d + " -> " + cTxtBoldRed + "(not a repo)" + cTxtDefault
+                continue
+
+            #print "CWD: %s" % os.getcwd()
+
+            sp = subprocess.Popen(
+                cmd,
+                cwd=os.path.join(parent, d),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+            thread = threading.Thread(target=repo_get_info, args=[d, t, sp])
+            thread.start()
+            threads.append(thread)
+
+    for th in threads:
+        th.join()
+
+if __name__ == '__main__':
+    main()
+
