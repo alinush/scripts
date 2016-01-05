@@ -22,7 +22,7 @@ def repo_get_info(d, t, subproc):
             print "ERROR: Did not expect to reach this state: (%s, %s)" % d, t
             os.exit(1)
 
-    print d + " -> " + info + cTxtDefault
+        print d + " -> " + info + cTxtDefault
 
 
 def git_get_info(d, status):
@@ -70,7 +70,9 @@ def main(dir_name):
                 cmd = ["svn", "status"]
                 t = "svn"
             else:
-                print d + " -> " + cTxtBoldRed + "(not a repo)" + cTxtDefault
+                with lock:
+                    print d + " -> " + cTxtBoldRed + "(not a repo)" + cTxtDefault
+
                 continue
 
             #print "CWD: %s" % os.getcwd()

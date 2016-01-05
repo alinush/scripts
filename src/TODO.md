@@ -10,6 +10,11 @@ TODO
  - [DONE] Add `<dir_name>` argument to specify repository directory (dir where repos are) to update all repos in
  - [DONE] Add config-file that specifies extra repo directories to work with
 
+`repo-status.py`
+----------------
+
+ - [DONE] Fix race condition when printing (multiple lines are printed on the same line)
+
 `encrypt.sh` and `decrypt.sh`
 -----------------------------
 
