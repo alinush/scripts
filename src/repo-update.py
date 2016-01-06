@@ -100,7 +100,7 @@ def update_repos_dir(pool, reposDir):
     #print "Looking at repoDir '%s' ..." % reposDir
     for d in os.listdir(reposDir):
         d = os.path.join(reposDir, d)
-        if not os.isdir(d):
+        if not os.path.isdir(d):
             continue
         update_repo(pool, d)
 
