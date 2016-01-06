@@ -60,6 +60,8 @@ def main(dir_name):
         parent = os.path.abspath(reposDir)
 
         for d in os.listdir(parent):
+            if not os.path.isdir(os.path.join(parent, d)):
+                continue
 
             #print "Looking at '%s' in %s ..." % (d, parent)
             os.chdir(os.path.join(parent, d))
