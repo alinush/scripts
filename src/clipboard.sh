@@ -1,6 +1,33 @@
-scriptdir=$(readlink -f $(dirname $0))
+#!/bin/bash
+
+set -e
+
+#scriptdir=$(readlink -f $(dirname $0))
+scriptdir=$(cd $(dirname $0); pwd -P)
 
 vConfFile=$scriptdir/clipboard.conf
+
+function clearClipboard {
+    if which xclip >/dev/null; then
+        echo -n | xclip -sel clip
+    elif which pbcopy >/dev/null; then
+        echo -n | pbcopy
+    else
+        echo "ERROR: Neither xclip nor pbcopy are available."
+        exit 1
+    fi
+}
+
+function setClipboard {
+    if which xclip >/dev/null; then
+        echo -n "$1" | xclip -sel clip
+    elif which pbcopy >/dev/null; then
+        echo -n "$1" | pbcopy
+    else
+        echo "ERROR: Neither xclip nor pbcopy are available."
+        exit 1
+    fi
+}
 
 if [ -z "$1" ]; then
     echo "Usage: $(basename $0) <grep-pattern>"
@@ -8,7 +35,7 @@ if [ -z "$1" ]; then
 fi
 
 if [ "$1" == "-c" -o "$1" == "--clear" ]; then
-    echo -n | xclip -sel clip
+    clearClipboard
     echo "Cleared clipboard!"
     exit 0
 fi
@@ -18,9 +45,13 @@ if [ ! -f "$vConfFile" ]; then
     exit 1
 fi
 
-vNumLines=`wc -l $vConfFile | cut -f 1 -d' '`
+# NOTE: Differences in output between Ubuntu and OS X. Must use
+# second echo to clear off whitespace
+vNumLines=`wc -l $vConfFile`
+vNumLines=`echo $vNumLines | cut -f 1 -d' '`
+echo "vNumLines: $vNumLines"
 
-if [ $vNumLines != 1 ]; then
+if [ $vNumLines -ne 1 ]; then
     echo "ERROR: '$vConfFile' can only have one line"
     exit 1
 fi
@@ -36,7 +67,10 @@ fi
 echo "Copying from $vFile..."
 
 vResult=`grep "^$1" "$vFile"`
-vNumLines=`echo "$vResult" | wc -l | cut -f 1 -d' '`
+# NOTE: Differences in output between Ubuntu and OS X. Must use
+# second echo to clear off whitespace
+vNumLines=`echo "$vResult" | wc -l`
+vNumLines=`echo $vNumLines | cut -f 1 -d' '`
 vResult=`echo "$vResult" | head -n 1`
 
 if [ -z "$vResult" ]; then
@@ -61,9 +95,9 @@ if [ -z "$vValue" ]; then
     exit 1
 fi
 
-if [ $vNumLines != 1 ]; then
+if [ $vNumLines -ne 1 ]; then
     echo "WARNING: Multiple matches! Only using the first one for '$vKey'"
 fi
 
-echo -n "$vValue" | xclip -sel clip
+setClipboard "$vValue"
 echo "Copied value for '$vKey' key!"
