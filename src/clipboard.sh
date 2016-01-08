@@ -49,7 +49,7 @@ fi
 # second echo to clear off whitespace
 vNumLines=`wc -l $vConfFile`
 vNumLines=`echo $vNumLines | cut -f 1 -d' '`
-echo "vNumLines: $vNumLines"
+#echo "vNumLines: $vNumLines"
 
 if [ $vNumLines -ne 1 ]; then
     echo "ERROR: '$vConfFile' can only have one line"
@@ -66,7 +66,7 @@ fi
 
 echo "Copying from $vFile..."
 
-vResult=`grep "^$1" "$vFile"`
+vResult=`grep "^$1" "$vFile" || :`
 # NOTE: Differences in output between Ubuntu and OS X. Must use
 # second echo to clear off whitespace
 vNumLines=`echo "$vResult" | wc -l`
