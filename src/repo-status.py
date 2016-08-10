@@ -8,7 +8,7 @@ from pylibs.colors import *
 from pylibs.repodir import REPOS_DIRS
 
 lock = threading.Lock()
-
+verbosity = 0
 
 def repo_get_info(d, t, subproc):
     #subproc.wait()
@@ -27,18 +27,24 @@ def repo_get_info(d, t, subproc):
 
 def git_get_info(d, status):
     output = cTxtBoldRed + "(has changes)"
+    global verbosity
 
-    if "nothing to commit, working directory clean" in status:
+    if "nothing to commit, working directory clean" in status or "nothing to commit, working tree clean" in status:
         output = cTxtBoldGreen + "(no local changes)"
+    elif verbosity != 0:
+        print d + " -> " + cTxtRed + "extra Git output: [" + status + "]" + cTxtDefault
 
     return cTxtBoldGreen + "Git " + output
 
 
 def svn_get_info(d, status):
     output = cTxtBoldRed + "(has changes)"
+    global verbosity
 
     if len(status) == 0:
         output = cTxtBoldGreen + "(no local changes)"
+    elif verbosity != 0:
+        print "Extra SVN output: [" + status + "]"
 
     return cTxtBoldBlue + "SVN " + output
 
@@ -48,7 +54,12 @@ threads = []
 
 @click.command()
 @click.argument('dir_name', required=False, type=click.STRING)
-def main(dir_name):
+@click.option('-v', '--verbose', count=True, help='Displays more detailed information.')
+def main(dir_name, verbose):
+    global verbosity
+    verbosity = verbose
+    print "Verbosity:", verbosity
+
     if dir_name is None:
         dirs = REPOS_DIRS
     else:
