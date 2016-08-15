@@ -2,6 +2,7 @@
 
 import subprocess
 import os
+import re
 import click
 import threading
 from pylibs.colors import *
@@ -29,10 +30,15 @@ def git_get_info(d, status):
     output = cTxtBoldRed + "(has changes)"
     global verbosity
 
-    if "nothing to commit, working directory clean" in status or "nothing to commit, working tree clean" in status:
+    # TODO: why don't regexes work?
+    #if re.compile("Your branch is ahead of '.*' by [0-9]* commits\.").match(status):
+    if "git push" in status and "branch is ahead of" in status:
+        output = cTxtBoldRed + "(has unpushed commits)" 
+    elif "nothing to commit, working directory clean" in status or "nothing to commit, working tree clean" in status:
         output = cTxtBoldGreen + "(no local changes)"
-    elif verbosity != 0:
-        print d + " -> " + cTxtRed + "extra Git output: [" + status + "]" + cTxtDefault
+
+    if verbosity != 0:
+        print d + " -> extra Git output: " + cTxtRed + "[" + status + "]" + cTxtDefault
 
     return cTxtBoldGreen + "Git " + output
 
