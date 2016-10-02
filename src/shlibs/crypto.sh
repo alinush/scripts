@@ -265,13 +265,13 @@ crypto_aes_decrypt_file() {
             hex_to_binary $tAesIv; 
             hex_to_binary $tZeroes;
             dd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null \
-             | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out $pOutFile -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
+             | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out "$pOutFile" -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
              
         tRet=$?
     else
         local tTempMacFile=`mktemp`
 
-        mkdir -p $pOutFile
+        mkdir -p "$pOutFile"
         
         ( hex_to_binary $tVersionByte;
         hex_to_binary $tFileType;
@@ -281,7 +281,7 @@ crypto_aes_decrypt_file() {
         hex_to_binary $tZeroes;
         dd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null ) \
             | tee >(crypto_hmac $tMacKey -hex >$tTempMacFile) | tail -c +$(($gCryptoHeaderSize+1)) \
-            | openssl enc -d -nosalt -$gCryptoAesMode -iv $tAesIv -K $tAesKey | tar xz -C $pOutFile
+            | openssl enc -d -nosalt -$gCryptoAesMode -iv $tAesIv -K $tAesKey | tar xz -C "$pOutFile"
 
         tRet=$?
         
