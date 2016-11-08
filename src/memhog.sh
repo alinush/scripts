@@ -1,1 +1,1 @@
-ps -e -o pid,vsz,comm= | sort -n -k 2
+ps -e -o pid,vsz,rsz,comm= | sort -n -k 3
