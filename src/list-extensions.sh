@@ -1,5 +1,5 @@
 vDir=${1:-`pwd`}
-vDir=`readlink -f "$vDir"`
+vDir=$(cd "$vDir"; pwd -P)
 
 echo "Listing extension in directory: $vDir"
 
