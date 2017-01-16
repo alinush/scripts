@@ -4,7 +4,8 @@ echo "Printing this host's SSH key fingprints in /etc/ssh/ ..."
 echo
 
 for f in `ls /etc/ssh/ssh_host_*_key.pub`; do
-    #echo -n `basename "$f"` | cut -f 3 -d'_'
-    #echo -n " -> "
+    type=`basename "$f" | cut -f 3 -d'_'`
+    echo "$f ($type)"
     ssh-keygen -l -f "$f"
+    echo
 done
