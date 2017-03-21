@@ -3,4 +3,5 @@ if [ $# -lt 1 ]; then
     exit 1
 fi 
 
-youtube-dl -x "$1" --audio-format best --audio-quality 0 --embed-thumbnail -o "%(title)s.%(ext)s"
+# --embed-thumbnail
+youtube-dl -x "$1" --audio-format best --audio-quality 0 -o "%(title)s.%(ext)s"
