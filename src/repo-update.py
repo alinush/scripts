@@ -29,7 +29,7 @@ def git_repo_updated(res, d):
     stdout, stderr, errcode = res
     r = os.path.basename(d)
 
-    if re.compile("Current branch .* is up to date").match(stdout):
+    if re.compile("Current branch .* is up to date").match(stdout) or re.compile("^Already up-to-date\.$").match(stdout):
         status = cTxtBoldGreen + "(already up-to-date)"
     elif re.compile("Cannot pull with rebase: You have unstaged changes\.").match(stderr):
         status = cTxtBoldRed + "(cannot pull, please stash changes first)"
