@@ -1,24 +1,26 @@
 #!/bin/bash
 
-if [ $# -lt 4 ]; then
-    echo "Usage: `basename $0` -w <input-file> <start-time-hh:mm:ss[.milisecs]> <end-time-hh:mm:ss[.milisecs]> <output-file>"
-    echo "       `basename $0` -l <input-file> <start-time-hh:mm:ss[.milisecs]> <duration-in-secs[.milisecs]> <output-file>"
+if [ $# -lt 5 ]; then
+    echo "Usage: `basename $0` <input-file> -w <start-time-hh:mm:ss[.milisecs]> <end-time-hh:mm:ss[.milisecs]> <output-file>"
+    echo "       `basename $0` <input-file> -l <start-time-hh:mm:ss[.milisecs]> <duration-in-secs[.milisecs]> <output-file>"
     exit 1
 fi
 
+infile=$1
 flag=
 
-if [ "$1" == "-l" ]; then
+if [ "$2" == "-l" ]; then
     flag="-t"
-elif [ "$1" == "-w" ]; then
+elif [ "$2" == "-w" ]; then
     flag="-to"
 else
     echo "ERROR: First argument must be either -l or -w (see --help), not '$1'"
     exit 1
 fi
 
-shift
-
+start_time=$3
+end_time=$4
+outfile=$5
 cmd=avconv
 
 if ! which $cmd &>/dev/null; then
@@ -31,5 +33,5 @@ if ! which $cmd &>/dev/null; then
 fi
 
 # Can pass in -codec copy but that tends to freeze the first couple of seconds in the output, which is annoying.
-echo "Executing: $cmd -i '$1' -ss '$2' $flag '$3' '$4'"
-$cmd -i "$1" -ss "$2" $flag "$3" "$4"
+echo "Executing: $cmd -i '$infile' -ss '$start_time' $flag '$end_time' '$outfile'"
+$cmd -i "$infile" -ss "$start_time" $flag "$end_time" "$outfile"
