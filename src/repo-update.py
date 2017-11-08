@@ -33,10 +33,14 @@ def git_repo_updated(res, d):
         print d + " -> Git stdout: " + "[" + stdout + "]"
         print d + " -> Git stderr: " + "[" + stderr + "]"
 
-    if re.compile("Current branch .* is up to date").match(stdout) or re.compile("^Already up-to-date\.$").match(stdout):
+    # NOTE: For some reason adding the ^ character to match at the beginning of the line breaks this.
+    if re.compile("Current branch .* is up to date\.").search(stdout, re.MULTILINE) or re.compile("Already up-to-date\.").search(stdout, re.MULTILINE):
         status = cTxtBoldGreen + "(already up-to-date)"
-    elif re.compile("Cannot pull with rebase: You have unstaged changes\.").match(stderr):
+    # NOTE: For some other reason, adding re.MULTILINE to search prevents this from working.
+    elif re.compile("[cC]annot pull with rebase: You have unstaged changes\.").search(stderr):
         status = cTxtBoldRed + "(cannot pull, please stash changes first)"
+    elif "You are not currently on a branch." in stderr:
+        status = cTxtBoldRed + "(cannot pull, HEAD detached)"
     elif errcode != 0:
         status = cTxtBoldRed + "(unknown error, return code " + str(errcode) + ")"
     else:
