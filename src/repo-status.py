@@ -11,7 +11,7 @@ from pylibs.repodir import REPOS_DIRS
 lock = threading.Lock()
 verbosity = 0
 
-def repo_get_info(d, t, subproc):
+def repo_get_info(d, t, subproc, display_only_changed):
     #subproc.wait()
     stdout, stderr = subproc.communicate()
     with lock:
@@ -23,24 +23,28 @@ def repo_get_info(d, t, subproc):
             print "ERROR: Did not expect to reach this state: (%s, %s)" % d, t
             os.exit(1)
 
-        print d + " -> " + info + cTxtDefault
+        has_changes = info[0]
+        if (not display_only_changed) or has_changes == True:
+            print d + " -> " + info[1] + cTxtDefault
 
 
 def git_get_info(d, status):
     output = cTxtBoldRed + "(has changes)"
     global verbosity
+    has_changes = True
 
     # TODO: why don't regexes work?
     #if re.compile("Your branch is ahead of '.*' by [0-9]* commits\.").match(status):
     if "git push" in status and "branch is ahead of" in status:
-        output = cTxtBoldRed + "(has unpushed commits)" 
+        output = cTxtBoldRed + "(has unpushed commits)"
     elif "nothing to commit, working directory clean" in status or "nothing to commit, working tree clean" in status:
         output = cTxtBoldGreen + "(no local changes)"
+        has_changes = False
 
     if verbosity != 0:
         print d + " -> extra Git output: " + cTxtRed + "[" + status + "]" + cTxtDefault
 
-    return cTxtBoldGreen + "Git " + output
+    return (has_changes, cTxtBoldGreen + "Git " + output)
 
 
 def svn_get_info(d, status):
@@ -61,10 +65,12 @@ threads = []
 @click.command()
 @click.argument('dir_name', required=False, type=click.STRING)
 @click.option('-v', '--verbose', count=True, help='Displays more detailed information.')
-def main(dir_name, verbose):
+@click.option('--only-changed/--display-all', default=True, help='Only displays repositories that have changes in them.')
+def main(dir_name, verbose, only_changed):
     global verbosity
     verbosity = verbose
     print "Verbosity:", verbosity
+    print "Only display repositories with changes:", only_changed
 
     if dir_name is None:
         dirs = REPOS_DIRS
@@ -103,7 +109,7 @@ def main(dir_name, verbose):
                 stderr=subprocess.PIPE,
             )
 
-            thread = threading.Thread(target=repo_get_info, args=[d, t, sp])
+            thread = threading.Thread(target=repo_get_info, args=[d, t, sp, only_changed])
             thread.start()
             threads.append(thread)
 
