@@ -9,7 +9,7 @@ from pylibs.colors import *
 from pylibs.repodir import REPOS_DIRS
 
 threadPool = ThreadPool(16)
-
+verbosity = 0;
 
 def create_proc(cmd, d):
     """ This runs in a separate thread. """
@@ -28,6 +28,10 @@ def git_repo_updated(res, d):
     status = cTxtBoldRed + "(updated successfully)"
     stdout, stderr, errcode = res
     r = os.path.basename(d)
+
+    if verbosity > 0:
+        print d + " -> Git stdout: " + "[" + stdout + "]"
+        print d + " -> Git stderr: " + "[" + stderr + "]"
 
     if re.compile("Current branch .* is up to date").match(stdout) or re.compile("^Already up-to-date\.$").match(stdout):
         status = cTxtBoldGreen + "(already up-to-date)"
@@ -107,7 +111,12 @@ def update_repos_dir(pool, reposDir):
 
 @click.command()
 @click.argument('repo_or_dir_name', required=False, type=click.STRING)
-def main(repo_or_dir_name):
+@click.option('-v', '--verbose', count=True, help='Displays more detailed information.')
+def main(repo_or_dir_name, verbose):
+    global verbosity
+    verbosity = verbose
+    print "Verbosity:", verbosity
+
     if repo_or_dir_name is not None:
         isRepo, _, _, _ = is_repo(repo_or_dir_name)
         if isRepo:
