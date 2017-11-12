@@ -69,18 +69,21 @@ threads = []
 def main(dir_name, verbose, only_changed):
     global verbosity
     verbosity = verbose
-    print "Verbosity:", verbosity
-    print "Only display repositories with changes:", only_changed
+    if verbosity > 0:
+        print "Verbosity:", verbosity
+    #print "Only display repositories with changes:", only_changed
 
     if dir_name is None:
         dirs = REPOS_DIRS
     else:
         dirs = [ dir_name ]
 
-    print "Printing status of repositories in '%s'\n" % dirs
+    #print "Printing status of repositories in '%s'" % dirs
 
     for reposDir in dirs:
         parent = os.path.abspath(reposDir)
+        print
+        print "Looking at repos in " + cTxtGreen + parent + cTxtDefault + "..."
 
         for d in os.listdir(parent):
             if not os.path.isdir(os.path.join(parent, d)):
@@ -115,6 +118,7 @@ def main(dir_name, verbose, only_changed):
 
     for th in threads:
         th.join()
+    print
 
 if __name__ == '__main__':
     main()
