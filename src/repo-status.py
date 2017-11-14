@@ -105,6 +105,7 @@ def main(dir_name, verbose, only_changed):
 
             #print "CWD: %s" % os.getcwd()
 
+            # TODO: race condition between print call above and print calls in the subprocess
             sp = subprocess.Popen(
                 cmd,
                 cwd=os.path.join(parent, d),
