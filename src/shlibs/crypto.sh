@@ -1,3 +1,7 @@
+#!/bin/bash
+
+# WARNING: Assumes os.sh is sourced!
+
 # Global variables
 #
 # The AES mode that this library will use. Please see 'man enc'
@@ -23,22 +27,61 @@ echo "Using crypto library... " >&2
 echo " * Checking for tools..." >&2
 echo "   + OpenSSL binary..." >&2
 which openssl &>/dev/null || { echo " missing!"; exit 1; }
-echo "   + sed..." >&2 
-which sed &>/dev/null || { echo " missing!"; exit 1; }
 echo "   + printf..." >&2
 which printf &>/dev/null || { echo " missing!"; exit 1; }
 echo "   + hexdump..." >&2
 which hexdump &>/dev/null || { echo " missing!"; exit 1; }
-echo "   + sha256sum..." >&2
-which sha256sum &>/dev/null || { echo " missing!"; exit 1; }
+echo -n "   + sha256sum..." >&2
+if which sha256sum &>/dev/null; then
+    sha256cmd='sha256sum'
+else
+    if which shasum &>/dev/null; then
+        sha256cmd='shasum -a 256'
+    else
+        echo " missing!"
+        exit 1
+    fi
+fi
+echo
 echo " * All are tools here!" >&2
+echo -n " * Checking OS..."
+if [ -z "$OS" ]; then
+    echo " did you source os.sh?"
+    exit 1
+else
+    echo " $OS detected."
+fi
+
+ddCmd='dd'
+if [ "$OS" == "OSX" ]; then
+    getFileSizeCmd='stat -f "%z"'
+
+    if which gdd &>/dev/null; then
+        ddCmd='gdd'
+    else
+        echo "ERROR: Missing gdd (i.e., GNU dd)"
+        exit 1
+    fi 
+else
+    getFileSizeCmd='stat --printf "%s"'
+fi
 echo  >&2
+
+#
+# $1 path to file. 
+# Both on Linux and OS X, if file is a symlink, prints the symlink size, not the pointed-to file size
+#
+get_file_size() {
+    $getFileSizeCmd $1
+}
 
 #
 # $1 hex string to be converted to binary
 #
 hex_to_binary() {
-    echo -n "$1" | sed 's/\([0-9A-F]\{2\}\)/\\\\\\x\1/gI' | xargs printf
+    # NOTE: sed and gsed are not really cross-platform
+    #echo -n "$1" | sed 's/\([0-9A-F]\{2\}\)/\\\\\\x\1/gI' | xargs printf
+    echo -n "$1" | xxd -r -p
 }
 
 #
@@ -57,6 +100,8 @@ binary_to_hex() {
     hexdump -ve '1/1 "%.2x"'
 }
 
+echo "Binary to hex and back works!" | binary_to_hex | hex_to_binary
+
 #
 # $1 the IV size in bytes
 #
@@ -71,7 +116,7 @@ crypto_get_random_iv()
 #
 crypto_kdf()
 {
-    echo -n "($1|$2)" | sha256sum | cut -d' ' -f 1
+    echo -n "($1|$2)" | $sha256cmd | cut -d' ' -f 1
 }
 
 #
@@ -166,12 +211,13 @@ crypto_aes_encrypt_file()
     
     echo "Computed MAC: $tMac" >&2
     
-    local tOrigSize=`stat --printf %s $pOutFile`
+    local tOrigSize=`get_file_size $pOutFile`
     
-    # Write in the actual MAC in the output filef
-    hex_to_binary $tMac | dd of="$pOutFile" obs=$gCryptoMacSize count=1 conv=notrunc oflag=seek_bytes seek=$(($gCryptoHeaderSize-$gCryptoMacSize)) 2>/dev/null
+    # Write in the actual MAC in the middle of the output file
+    hex_to_binary $tMac | $ddCmd of="$pOutFile" obs=$gCryptoMacSize count=1 conv=notrunc oflag=seek_bytes seek=$(($gCryptoHeaderSize-$gCryptoMacSize)) 2>/dev/null
     
-    local tModifiedSize=`stat --printf %s $pOutFile`
+    # Checks that nothing went wrong and the bytes were written *in* not appended or prepended
+    local tModifiedSize=`get_file_size $pOutFile`
         
     if [ "$tOrigSize" != "$tModifiedSize" ]; then
         echo "ERROR: Internal error, file size changed from $tOrigSize bytes to $tModifiedSize bytes after writing MAC to file" >&2
@@ -197,7 +243,7 @@ crypto_aes_decrypt_file() {
     fi
     
     local tSkipBytes=0
-    local tVersionByte=`dd if="$pInFile" bs=1 count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    local tVersionByte=`$ddCmd if="$pInFile" bs=1 count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
     if [ "$tVersionByte" != "$gCryptoVersionByteHex" ]; then
         echo "ERROR: Ciphertext file version (0x$tVersionByte) differs from this script's version (0x$gCryptoVersionByteHex)"
         return 1
@@ -205,7 +251,7 @@ crypto_aes_decrypt_file() {
     
     # the file type is stored as the first byte
     tSkipBytes=$(($tSkipBytes + 1))
-    local tFileType=`dd if="$pInFile" bs=1 count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    local tFileType=`$ddCmd if="$pInFile" bs=1 count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
     local tFileOrDir=
     if [ "$tFileType" = "00" ]; then
         echo "Type: file" >&2
@@ -224,23 +270,23 @@ crypto_aes_decrypt_file() {
  
     # the IV used in the KDF for obtaining the AES key
     tSkipBytes=$(($tSkipBytes + 1))
-    local tKdfAesIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    local tKdfAesIv=`$ddCmd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
     echo "KDF IV for AES key: $tKdfAesIv" >&2
     
     # the IV used in the KDF for obtaining the HMAC key
     tSkipBytes=$(($tSkipBytes + $gCryptoKdfIvSize))
-    local tKdfMacIv=`dd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    local tKdfMacIv=`$ddCmd if="$pInFile" bs=$gCryptoKdfIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
     echo "KDF IV for MAC key: $tKdfMacIv" >&2
     
     # the AES IV
     tSkipBytes=$(($tSkipBytes + $gCryptoKdfIvSize))
-    local tAesIv=`dd if="$pInFile" bs=$gCryptoAesIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    local tAesIv=`$ddCmd if="$pInFile" bs=$gCryptoAesIvSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
     echo "AES IV: $tAesIv" >&2
     
     # the MAC over the KDF IVs, AES IV and ciphertext
     tSkipBytes=$(($tSkipBytes + $gCryptoAesIvSize))
     local tZeroes=0000000000000000000000000000000000000000000000000000000000000000
-    local tMac=`dd if="$pInFile" bs=$gCryptoMacSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
+    local tMac=`$ddCmd if="$pInFile" bs=$gCryptoMacSize count=1 iflag=skip_bytes skip=$tSkipBytes 2>/dev/null | binary_to_hex`
     echo "Stored MAC: $tMac" >&2
     
     local tAesKey=`crypto_kdf "aes-$pPassword" $tKdfAesIv`  # the AES encryption key
@@ -264,7 +310,7 @@ crypto_aes_decrypt_file() {
             hex_to_binary $tKdfMacIv;
             hex_to_binary $tAesIv; 
             hex_to_binary $tZeroes;
-            dd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null \
+            $ddCmd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null \
              | tee >(openssl enc -d -nosalt -$gCryptoAesMode -out "$pOutFile" -iv $tAesIv -K $tAesKey) ) | crypto_hmac $tMacKey -hex`
              
         tRet=$?
@@ -279,7 +325,7 @@ crypto_aes_decrypt_file() {
         hex_to_binary $tKdfMacIv;
         hex_to_binary $tAesIv; 
         hex_to_binary $tZeroes;
-        dd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null ) \
+        $ddCmd if="$pInFile" iflag=skip_bytes skip=$gCryptoHeaderSize 2>/dev/null ) \
             | tee >(crypto_hmac $tMacKey -hex >$tTempMacFile) | tail -c +$(($gCryptoHeaderSize+1)) \
             | openssl enc -d -nosalt -$gCryptoAesMode -iv $tAesIv -K $tAesKey | tar xz -C "$pOutFile"
 

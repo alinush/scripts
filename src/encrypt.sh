@@ -2,7 +2,9 @@
 
 set -e
 
-scriptdir=$(readlink -f $(dirname $0))
+scriptdir=$(cd $(dirname $0); pwd -P)
+
+. "$scriptdir/shlibs/os.sh"
 
 vInFile=$1
 vOutFile=$2
