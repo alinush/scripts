@@ -5,9 +5,9 @@ set -e
 scriptdir=$(cd $(dirname $0); pwd -P)
 
 if [ $# -lt 2 ]; then
-    echo "Usage: `basename $0` <ssh-user@ssh-server> <port> [OPTIONS]"
+    echo "Usage: `basename $0` <user@remote-ssh-server> <local-port> [OPTIONS]"
     echo
-    echo "Starts a SOCKS proxy on the specified server and port, secured via SSH."
+    echo "Starts a SOCKS proxy on the specified server and \"forwards\" it to the local port, secured via SSH."
     echo
     echo "OPTIONS:"
     echo " -b   runs in background mode"
