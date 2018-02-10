@@ -9,6 +9,10 @@ scriptdir=$(cd $(dirname $0); pwd -P)
 which oathtool &>/dev/null || { echo "ERROR: No 'oathtool' installed."; exit 1; } 
 
 key=$1
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <hex-or-base64-otp-key>"
+    exit 1
+fi
 
 # TODO: better way to check if key is hex- or base64-encoded
 otp=`oathtool --totp $key || :`
