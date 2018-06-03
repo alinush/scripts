@@ -27,7 +27,7 @@ fi
 . "$scriptdir/shlibs/crypto.sh" >&2
 
 if [ -d "$vOutFile" ]; then
-    vOutFile="`readlink -f $vOutFile`/`basename $vInFile`.enc"
+    vOutFile=`$readlinkCmd -f "$vOutFile"`/`basename "$vInFile"`.enc
 fi
 
 echo "Operation:"
@@ -56,11 +56,11 @@ echo " * Encrypting '$vInFile', storing in '$vOutFile' ..."
 echo
 
 if [ -f "$vInFile" ]; then
-    if ! crypto_aes_encrypt_file $vInFile $vOutFile "$vPassword"; then
+    if ! crypto_aes_encrypt_file "$vInFile" "$vOutFile" "$vPassword"; then
         exit 1
     fi
 elif [ -d "$vInFile" ]; then
-    if ! crypto_aes_encrypt_dir $vInFile $vOutFile "$vPassword"; then
+    if ! crypto_aes_encrypt_dir "$vInFile" "$vOutFile" "$vPassword"; then
         exit 1
     fi
 else

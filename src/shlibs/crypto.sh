@@ -53,8 +53,16 @@ else
 fi
 
 ddCmd='dd'
+readlinkCmd='readlink'
 if [ "$OS" == "OSX" ]; then
     getFileSizeCmd='stat -f "%z"'
+
+    if which greadlink &>/dev/null; then
+        readlinkCmd='greadlink'
+    else
+        echo "ERROR: Missing greadlink (i.e., GNU readlink)"
+        exit 1
+    fi
 
     if which gdd &>/dev/null; then
         ddCmd='gdd'
@@ -72,7 +80,7 @@ echo  >&2
 # Both on Linux and OS X, if file is a symlink, prints the symlink size, not the pointed-to file size
 #
 get_file_size() {
-    $getFileSizeCmd $1
+    $getFileSizeCmd "$1"
 }
 
 #
@@ -202,7 +210,7 @@ crypto_aes_encrypt_file()
             openssl enc -e -nosalt -$gCryptoAesMode -in "$pInFile" -iv $tAesIv -K $tAesKey; 
         else
             openssl enc -e -nosalt -$gCryptoAesMode -iv $tAesIv -K $tAesKey;
-        fi) | tee >(cat >$pOutFile) | crypto_hmac $tMacKey -hex`
+        fi) | tee >(cat >"$pOutFile") | crypto_hmac $tMacKey -hex`
       
     if [ $? -ne 0 ]; then
         echo "ERROR: The OpenSSL enc tool failed encrypting" >&2
@@ -211,13 +219,13 @@ crypto_aes_encrypt_file()
     
     echo "Computed MAC: $tMac" >&2
     
-    local tOrigSize=`get_file_size $pOutFile`
+    local tOrigSize=`get_file_size "$pOutFile"`
     
     # Write in the actual MAC in the middle of the output file
     hex_to_binary $tMac | $ddCmd of="$pOutFile" obs=$gCryptoMacSize count=1 conv=notrunc oflag=seek_bytes seek=$(($gCryptoHeaderSize-$gCryptoMacSize)) 2>/dev/null
     
     # Checks that nothing went wrong and the bytes were written *in* not appended or prepended
-    local tModifiedSize=`get_file_size $pOutFile`
+    local tModifiedSize=`get_file_size "$pOutFile"`
         
     if [ "$tOrigSize" != "$tModifiedSize" ]; then
         echo "ERROR: Internal error, file size changed from $tOrigSize bytes to $tModifiedSize bytes after writing MAC to file" >&2
@@ -256,7 +264,7 @@ crypto_aes_decrypt_file() {
     if [ "$tFileType" = "00" ]; then
         echo "Type: file" >&2
         if [ -d "$pOutFile" ]; then
-            pOutFile="$(readlink -f $pOutFile)/$(basename $pInFile).dec"
+            pOutFile=`$readlinkCmd -f "$pOutFile"`/`basename "$pInFile"`.dec
             echo "Changed destination file to '$pOutFile' since you specified a directory"
         fi
         tFileOrDir="file"
