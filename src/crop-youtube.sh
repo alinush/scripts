@@ -7,8 +7,8 @@ scriptdir=$(cd $(dirname $0); pwd -P)
 if [ $# -lt 5 ]; then
     echo "Downloads and cuts a YouTube video. All videos are stored in a preconfigured directory (see youtube.conf)."
     echo
-    echo "Usage: `basename $0` <youtube-url> -w <start-time-hh:mm:ss[.milisecs]> <end-time-hh:mm:ss[.milisecs]> <video-name>"
-    echo "       `basename $0` <youtube-url> -l <start-time-hh:mm:ss[.milisecs]> <duration-in-secs[.milisecs]> <video-name>"
+    echo "Usage: `basename $0` <youtube-url> -w <start-time-hh:mm:ss[.milisecs]> <end-time-hh:mm:ss[.milisecs]> <video-name> [extra-ffmpeg-args]"
+    echo "       `basename $0` <youtube-url> -l <start-time-hh:mm:ss[.milisecs]> <duration-in-secs[.milisecs]>  <video-name> [extra-ffmpeg-args]"
     echo
     exit 1
 fi
@@ -18,6 +18,8 @@ crop_video_flag=$2
 start_time=$3
 end_time=$4
 video_name=$5
+shift 5
+extra_ffmpeg_args=$@
 
 if [ ! -f "$scriptdir/youtube.conf" ]; then
     echo "ERROR: Please create 'youtube.conf' configuration file with download directory path in '$scriptdir'"
@@ -58,6 +60,6 @@ path=$download_dir/by-id/$filename
 )
 
 # The cut video will be stored here
-cut_video_path=$download_dir/$video_name.$video_extension
+cut_video_path=$download_dir/$video_name.mp4
 
-$scriptdir/crop-video.sh "$path" $crop_video_flag "$start_time" "$end_time" "$cut_video_path"
+$scriptdir/crop-video.sh "$path" $crop_video_flag "$start_time" "$end_time" "$cut_video_path" $extra_ffmpeg_args
