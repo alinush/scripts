@@ -53,6 +53,17 @@ mkdir -p "$download_dir/by-id"
 # The uncut video is stored here
 path=$download_dir/by-id/$filename
 
+if [ ! -f "$path" ]; then
+    echo "WARNING: Could not find video file at expected path '$path'."
+    echo "This probably because youtube-dl changed the file's extension to 'mkv.' Trying 'mkv' extension."
+    path="${path%$video_extension}mkv" 
+
+    if [ ! -f "$path" ]; then
+        echo "ERROR: Could not find .mkv file either at '$path'"
+        exit 1
+    fi
+fi
+
 # Create symlink named with video's title
 (
     cd "$download_dir"
