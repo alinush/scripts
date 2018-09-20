@@ -6,4 +6,4 @@ fi
 audio_format=${2:-'m4a'}
 
 # --embed-thumbnail
-youtube-dl -x "$1" --audio-format "$audio_format" --audio-quality 0 -o "%(title)s.%(ext)s"
+youtube-dl -x "$1" --audio-format "$audio_format" --audio-quality 0 --postprocessor-args "-strict -2" -o "%(title)s.%(ext)s"
