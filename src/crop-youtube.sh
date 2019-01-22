@@ -64,9 +64,16 @@ if [ ! -f "$path" ]; then
     fi
 fi
 
+echo
+echo "Replacing / characters in title if any..."
+title="${title//\//-}"
+
 # Create symlink named with video's title
 (
     cd "$download_dir"
+    echo
+    echo "Creating symlink to '$path' in '$download_dir/$title'"
+    echo
     ln -sf "$path" "$title"
 )
 
