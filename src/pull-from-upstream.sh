@@ -30,4 +30,5 @@ fi
 
 git fetch upstream
 
-git rebase upstream/master
+#git rebase upstream/master
+git merge upstream/master
