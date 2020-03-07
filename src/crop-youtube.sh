@@ -18,6 +18,15 @@ crop_video_flag=$2
 start_time=$3
 end_time=$4
 video_name=$5
+accidental_extension=$([[ "$video_name" = *.* ]] && echo "${video_name##*.}" || echo '')
+video_name=${video_name%%.*}
+echo "Output video name (w/o extension): $video_name"
+
+if [ -n "$accidental_extension" ]; then
+    echo "ERROR: Do not give an extension. Just give the video name. (You gave '$accidental_extension' as an extension.)"
+    exit 1
+fi
+
 shift 5
 extra_ffmpeg_args=$@
 
@@ -40,8 +49,14 @@ filename=`echo "$id_and_file" | tail -n 1`
 title=`echo "$id_and_file" | head -n 1`
 video_extension="${filename##*.}"
 id=${filename%.*}
-echo "YouTube video    ID: $id"
-echo "YouTube video title: $title"
+echo "YouTube video extension: $video_extension"
+echo "YouTube video ID:        $id"
+echo "YouTube video title:     $title"
+
+if [ -z "$video_extension" ]; then
+    echo "ERROR: Expected a video extension in the filename '$filename'"
+    exit 1
+fi
 
 # Download YouTube video and store it in a by-id/ directory
 mkdir -p "$download_dir/by-id"
@@ -75,7 +90,7 @@ mkdir -p "$download_dir/by-title"
     echo
     echo "Creating symlink to '$path' in '$download_dir/by-title/$title'"
     echo
-    ln -sf "$path" "by-title/$title"
+    ln -sf "$path" "by-title/$title.$video_extension"
 )
 
 # The cut video will be stored here
