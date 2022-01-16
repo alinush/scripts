@@ -4,6 +4,8 @@ set -e
 
 scriptdir=$(cd $(dirname $0); pwd -P)
 
+. $scriptdir/shlibs/os.sh
+
 if [ $# -lt 5 ]; then
     echo "Downloads and cuts a YouTube video. All videos are stored in a preconfigured directory (see youtube.conf)."
     echo
@@ -35,7 +37,12 @@ if [ ! -f "$scriptdir/youtube.conf" ]; then
     exit 1
 fi
 
-download_dir=`cat "$scriptdir/youtube.conf"`
+download_dir=`$sed_cmd "1q;d" "$scriptdir/youtube.conf"`
+logfile=`$sed_cmd "2q;d" "$scriptdir/youtube.conf"`
+
+if [ ! -f $logfile ]; then
+    touch $logfile
+fi
 
 # Other flags of interest:
 # --format FORMAT (see man page for format selection)
@@ -52,6 +59,8 @@ id=${filename%.*}
 echo "YouTube video extension: $video_extension"
 echo "YouTube video ID:        $id"
 echo "YouTube video title:     $title"
+
+echo "Preparing to download '$title' with ID $id from $url and cut it as '$video_name' with flags '$crop_video_flag $start_time $end_time' ..." >>$logfile
 
 if [ -z "$video_extension" ]; then
     echo "ERROR: Expected a video extension in the filename '$filename'"

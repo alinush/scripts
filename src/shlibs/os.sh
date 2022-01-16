@@ -15,5 +15,14 @@ elif [ "$(uname -s)" = "Linux" ]; then
     fi
 fi
 
+if which gsed &>/dev/null; then
+    sed_cmd=gsed
+elif which sed &>/dev/null; then
+    sed_cmd=sed
+else
+    echo "Neither 'sed' nor 'gsed' was found. Exiting..."
+    exit 1
+fi
+
 #echo "OS: $OS"
 #echo "OS Flavor: $OS_FLAVOR"
