@@ -1,0 +1,2 @@
+identify -verbose $*
+mogrify -strip $*

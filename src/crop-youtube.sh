@@ -60,6 +60,7 @@ echo "YouTube video extension: $video_extension"
 echo "YouTube video ID:        $id"
 echo "YouTube video title:     $title"
 
+# TODO: add time and date
 echo "Preparing to download '$title' with ID $id from $url and cut it as '$video_name' with flags '$crop_video_flag $start_time $end_time' ..." >>$logfile
 
 if [ -z "$video_extension" ]; then
