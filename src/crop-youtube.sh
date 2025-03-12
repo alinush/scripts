@@ -29,6 +29,7 @@ if [ -n "$accidental_extension" ]; then
     exit 1
 fi
 
+all_args="$@"
 shift 5
 extra_ffmpeg_args=$@
 
@@ -44,43 +45,45 @@ if [ ! -f $logfile ]; then
     touch $logfile
 fi
 
-# Other flags of interest:
+# Other youtube-dl flags of interest:
 # --format FORMAT (see man page for format selection)
 # --list-formats / -F
 # --merge-output-format FORMAT
 # --recode-video FORMAT
 
 echo "Getting YouTube video info..."
-id_and_file=`youtube-dl --id --get-filename --get-title "$url"`
-filename=`echo "$id_and_file" | tail -n 1`
-title=`echo "$id_and_file" | head -n 1`
+filename_fmt="%(channel)s--%(title)s--%(id)s.%(ext)s"
+desc=`yt-dlp --print title --print channel --print filename -o $filename_fmt "$url"`
+title=`echo "$desc" | head -n 1`
+channel=`echo "$desc" | head -n 2 | tail -n 1`
+filename=`echo "$desc" | tail -n 1`
 video_extension="${filename##*.}"
-id=${filename%.*}
 echo "YouTube video extension: $video_extension"
-echo "YouTube video ID:        $id"
+echo "YouTube video filename:  $filename"
 echo "YouTube video title:     $title"
 
-# TODO: add time and date
-echo "Preparing to download '$title' with ID $id from $url and cut it as '$video_name' with flags '$crop_video_flag $start_time $end_time' ..." >>$logfile
+date=`date +"%Y %B %A %d %I:%M %p %Z"`
+echo "[$date] Ran '`basename $0` $all_args'" >>$logfile
+echo "[$date] Downloading '$title' from $url and cutting it as '$video_name' with flags '$crop_video_flag $start_time $end_time' ..." >>$logfile
 
 if [ -z "$video_extension" ]; then
     echo "ERROR: Expected a video extension in the filename '$filename'"
     exit 1
 fi
 
-# Download YouTube video and store it in a by-id/ directory
-mkdir -p "$download_dir/by-id"
+# Download YouTube video and store it in the download directory
+mkdir -p "$download_dir/uncut"
 (
-    cd "$download_dir/by-id"
-    youtube-dl --continue --id --no-call-home "$url"
+    cd "$download_dir/uncut"
+    yt-dlp --continue -o $filename_fmt "$url"
 )
 
 # The uncut video is stored here
-path=$download_dir/by-id/$filename
+path=$download_dir/uncut/$filename
 
 if [ ! -f "$path" ]; then
     echo "WARNING: Could not find video file at expected path '$path'."
-    echo "This probably because youtube-dl changed the file's extension to 'mkv.' Trying 'mkv' extension."
+    echo "This probably because yt-dlp changed the file's extension to 'mkv.' Trying 'mkv' extension."
     path="${path%$video_extension}mkv" 
 
     if [ ! -f "$path" ]; then
@@ -89,19 +92,9 @@ if [ ! -f "$path" ]; then
     fi
 fi
 
-echo
-echo "Replacing / characters in title if any..."
-title="${title//\//-}"
-
-# Create symlink named with video's title
-mkdir -p "$download_dir/by-title"
-(
-    cd "$download_dir"
-    echo
-    echo "Creating symlink to '$path' in '$download_dir/by-title/$title'"
-    echo
-    ln -sf "$path" "by-title/$title.$video_extension"
-)
+#echo
+#echo "Replacing / characters in title if any..."
+#title="${title//\//-}"
 
 # The cut video will be stored here
 cut_video_path=$download_dir/$video_name.mp4
