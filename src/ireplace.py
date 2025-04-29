@@ -44,6 +44,7 @@ def process_file(file_path, search_str, replace_str):
 
             print(f"\n{i+1}: {highlighted}\n")
             answer = input("Do you want to replace on this line? (y/n): ").strip().lower()
+            #answer = "y";
             if answer == "y":
                 # Replace all occurrences of search_str in the line
                 new_line = line.replace(search_str, replace_str)
@@ -62,12 +63,12 @@ def process_file(file_path, search_str, replace_str):
 def main():
     # Check for proper command-line arguments
     if len(sys.argv) < 4:
-        print("Usage: python interactive_replace.py <directory> <search_str> <replace_str>")
+        print("Usage: python interactive_replace.py <search_str> <replace_str> <directory>")
         sys.exit(1)
     
-    directory = sys.argv[1]
-    search_str = sys.argv[2]
-    replace_str = sys.argv[3]
+    search_str = sys.argv[1]
+    replace_str = sys.argv[2]
+    directory = sys.argv[3]
 
     # Walk through the directory recursively
     for root, dirs, files in os.walk(directory):
