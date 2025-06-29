@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+#set -x
 
 scriptdir=$(cd $(dirname $0); pwd -P)
 

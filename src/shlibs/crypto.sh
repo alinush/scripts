@@ -371,11 +371,11 @@ crypto_aes_encrypt_dir() {
         return 1
     fi
 
-    local tParentDir=`dirname $pInputDir`
-    local tDirName=`basename $pInputDir`
+    local tParentDir=`dirname "$pInputDir"`
+    local tDirName=`basename "$pInputDir"`
 
     (
-        cd $tParentDir;
-        tar cz $tDirName | crypto_aes_encrypt_file - "$pOutputFile" "$pPassword"
+        cd "$tParentDir";
+        tar cz "$tDirName" | crypto_aes_encrypt_file - "$pOutputFile" "$pPassword"
     ) | cat
 }
