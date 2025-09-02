@@ -7,8 +7,19 @@ scriptdir=$(cd $(dirname $0); pwd -P)
 
 . $scriptdir/shlibs/os.sh
 
+youtube_conf=$scriptdir/youtube.conf
+download_dir=`$sed_cmd "1q;d" "$youtube_conf"`
+
+if [ ! -f "$youtube_conf" ]; then
+    echo "ERROR: Please create configuration file with download directory path in '$youtube_conf'"
+    exit 1
+fi
+
 if [ $# -lt 5 ]; then
-    echo "Downloads and cuts a YouTube video. All videos are stored in a preconfigured directory (see youtube.conf)."
+    echo "Downloads and cuts a YouTube video"
+    echo " - The cut video is stored in the '$download_dir' directory"
+    echo "     + (specified via the '$youtube_conf' config file)"
+    echo " - The uncut video is stored in the '$download_dir/uncut/' directory"
     echo
     echo "Usage: `basename $0` <youtube-url> -w <start-time-hh:mm:ss[.milisecs]> <end-time-hh:mm:ss[.milisecs]> <video-name> [extra-ffmpeg-args]"
     echo "       `basename $0` <youtube-url> -l <start-time-hh:mm:ss[.milisecs]> <duration-in-secs[.milisecs]>  <video-name> [extra-ffmpeg-args]"
@@ -34,15 +45,9 @@ all_args="$@"
 shift 5
 extra_ffmpeg_args=$@
 
-if [ ! -f "$scriptdir/youtube.conf" ]; then
-    echo "ERROR: Please create 'youtube.conf' configuration file with download directory path in '$scriptdir'"
-    exit 1
-fi
+logfile=`$sed_cmd "2q;d" "$youtube_conf"`
 
-download_dir=`$sed_cmd "1q;d" "$scriptdir/youtube.conf"`
-logfile=`$sed_cmd "2q;d" "$scriptdir/youtube.conf"`
-
-if [ ! -f $logfile ]; then
+if [ ! -f "$logfile" ]; then
     touch $logfile
 fi
 
@@ -64,8 +69,8 @@ echo "YouTube video filename:  $filename"
 echo "YouTube video title:     $title"
 
 date=`date +"%Y %B %A %d %I:%M %p %Z"`
-echo "[$date] Ran '`basename $0` $all_args'" >>$logfile
-echo "[$date] Downloading '$title' from $url and cutting it as '$video_name' with flags '$crop_video_flag $start_time $end_time' ..." >>$logfile
+echo "[$date] Ran '`basename $0` $all_args'" >>"$logfile"
+echo "[$date] Downloading '$title' from $url and cutting it as '$video_name' with flags '$crop_video_flag $start_time $end_time' ..." >>"$logfile"
 
 if [ -z "$video_extension" ]; then
     echo "ERROR: Expected a video extension in the filename '$filename'"
