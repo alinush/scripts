@@ -15,23 +15,23 @@ if [ ! -f "$youtube_conf" ]; then
     exit 1
 fi
 
-if [ $# -lt 5 ]; then
+if [ $# -lt 4 ]; then
     echo "Downloads and cuts a YouTube video"
-    echo " - The cut video is stored in the '$download_dir' directory"
-    echo "     + (specified via the '$youtube_conf' config file)"
-    echo " - The uncut video is stored in the '$download_dir/uncut/' directory"
+    echo " - The cut video is stored in: $download_dir/"
+    echo " - The uncut video is stored in: $download_dir/uncut/"
     echo
-    echo "Usage: `basename $0` <youtube-url> -w <start-time-hh:mm:ss[.milisecs]> <end-time-hh:mm:ss[.milisecs]> <video-name> [extra-ffmpeg-args]"
-    echo "       `basename $0` <youtube-url> -l <start-time-hh:mm:ss[.milisecs]> <duration-in-secs[.milisecs]>  <video-name> [extra-ffmpeg-args]"
+    echo "To change these directories, edit the '$youtube_conf' config file."
+    echo
+    echo "Usage: `basename $0` <youtube-url> <start-time-hh:mm:ss[.milisecs]> <end-time-hh:mm:ss[.milisecs]> <video-name> [extra-ffmpeg-args]"
     echo
     exit 1
 fi
 
 url=$1
-crop_video_flag=$2
-start_time=$3
-end_time=$4
-video_name=$5
+crop_video_flag="-w"
+start_time=$2
+end_time=$3
+video_name=$4
 accidental_extension=$([[ "$video_name" = *.* ]] && echo "${video_name##*.}" || echo '')
 video_name=${video_name%%.*}
 echo "Output video name (w/o extension): $video_name"
@@ -42,7 +42,7 @@ if [ -n "$accidental_extension" ]; then
 fi
 
 all_args="$@"
-shift 5
+shift 4
 extra_ffmpeg_args=$@
 
 logfile=`$sed_cmd "2q;d" "$youtube_conf"`
@@ -93,8 +93,13 @@ if [ ! -f "$path" ]; then
     path="${path%$video_extension}mkv" 
 
     if [ ! -f "$path" ]; then
-        echo "ERROR: Could not find .mkv file either at '$path'"
-        exit 1
+        echo "WARNING: Could not find video file at secondary path either '$path'."
+        echo "This probably because yt-dlp changed the file's extension to 'webm' Trying 'webm' extension."
+        path="${path%$video_extension}webm" 
+    
+        if [ ! -f "$path" ]; then
+            exit 1
+        fi
     fi
 fi
 
