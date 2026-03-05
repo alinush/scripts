@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-if [ $# -eq 0 ]; then
+if [ $# -ne 2 ]; then
     echo "Usage: $0 <source-pdf> <dest-png/jpg-image-file>"
     exit 0
 fi
@@ -12,7 +12,7 @@ if [ ! -f "$1" ]; then
 fi
 
 if [ -f "$2" ]; then
-    echo "ERROR: Destination image file '$1' already exists"
+    echo "ERROR: Destination image file '$2' already exists"
     exit 1
 fi
 
