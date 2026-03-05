@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: $0 <path-to-webm> [speed]"
+    echo "Usage: $0 <path-to-video> [speed]"
     echo ""
     echo "  speed: Playback speed multiplier (default: 1)."
     echo "         2 = twice as fast, 0.5 = half speed, etc."
@@ -18,7 +18,8 @@ if [[ ! -f "$input" ]]; then
 fi
 
 dir="$(dirname "$input")"
-basename="$(basename "$input" .webm)"
+basename="$(basename "$input")"
+basename="${basename%.*}"
 output="${dir}/${basename}.gif"
 
 pts_factor=$(echo "scale=4; 1 / $speed" | bc)
