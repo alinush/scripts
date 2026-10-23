@@ -120,7 +120,7 @@ def _get_with_retry(url, headers, *, label, max_attempts=6):
     for attempt in range(max_attempts):
         try:
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=15) as r:
+            with urllib.request.urlopen(req, timeout=60) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt < max_attempts - 1:
@@ -131,6 +131,16 @@ def _get_with_retry(url, headers, *, label, max_attempts=6):
                 time.sleep(wait)
                 continue
             warn(f"{label}: HTTP {e.code}")
+            return None
+        except (TimeoutError, urllib.error.URLError) as e:
+            # NearBlocks occasionally stalls on deep pages; back off and retry.
+            if attempt < max_attempts - 1:
+                wait = min(2 ** (attempt + 2), 60)
+                log(f"  {label}: {e}, retrying in {wait}s "
+                    f"(attempt {attempt + 1}/{max_attempts})")
+                time.sleep(wait)
+                continue
+            warn(f"{label}: {e}")
             return None
         except Exception as e:
             warn(f"{label}: {e}")
@@ -176,16 +186,21 @@ def analyze(proposals, finals):
     """
     log("grouping vote_new_parameters proposals by (epoch, threshold, participants) ...")
     groups = {}  # (epoch, thr, accts-tuple) -> list[(ts_ns, tx_hash, voter)]
+    skipped = 0
     for t in proposals:
         o = args_for_method(t, "vote_new_parameters")
         if not o:
+            skipped += 1
             continue
         try:
             epoch = o["prospective_epoch_id"]
             prop  = o["proposal"]
+            # Newer contracts (mid-2026+) nest the proposal under "parameters".
+            prop  = prop.get("parameters", prop)
             accts = tuple(sorted(p[0] for p in prop["participants"]["participants"]))
             thr   = prop["threshold"]
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, AttributeError):
+            skipped += 1
             continue
         sig = (epoch, thr, accts)
         groups.setdefault(sig, []).append((
@@ -193,6 +208,9 @@ def analyze(proposals, finals):
             t["transaction_hash"],
             t.get("predecessor_account_id", "?"),
         ))
+    if skipped:
+        warn(f"skipped {skipped} vote_new_parameters txn(s) with unparseable args "
+             f"(contract schema change?); output may be missing epochs")
     log(f"  found {len(groups)} distinct (epoch, threshold, participants) candidate(s)")
 
     log("scanning vote_reshared events for finalization timestamps ...")
